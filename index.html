@@ -3,492 +3,1179 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Gestión Curricular - Formación Tecnológica</title>
+    <title>Sistema de Gestión Curricular - ICE</title>
+    
+    <!-- Bootstrap 5 (GRATIS) -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons (GRATIS) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <!-- Chart.js para gráficos (GRATIS) -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- SheetJS para exportar Excel (GRATIS) -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    
     <style>
         :root {
-            --primary-color: #2c3e50;
-            --secondary-color: #3498db;
-            --success-color: #27ae60;
-            --warning-color: #f39c12;
-            --danger-color: #e74c3c;
+            --ice-blue: #005CA9;
+            --ice-green: #00A859;
+            --ice-gray: #F2F2F2;
         }
         
-        .dashboard-card {
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+        }
+        
+        .ice-header {
+            background: linear-gradient(135deg, var(--ice-blue) 0%, #003366 100%);
+            color: white;
+        }
+        
+        .ice-card {
+            border: none;
             border-radius: 10px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
             transition: transform 0.3s;
-            margin-bottom: 20px;
+            margin-bottom: 1rem;
         }
         
-        .dashboard-card:hover {
-            transform: translateY(-5px);
+        .ice-card:hover {
+            transform: translateY(-2px);
         }
         
-        .task-badge {
-            font-size: 0.75rem;
-            padding: 3px 8px;
-            border-radius: 12px;
-        }
-        
-        .calendar-day {
-            height: 40px;
+        .calendar-cell {
+            width: 45px;
+            height: 45px;
             border: 1px solid #dee2e6;
+            font-size: 0.8rem;
             cursor: pointer;
+            position: relative;
+            overflow: hidden;
         }
         
-        .calendar-day.task-assigned {
-            background-color: #e8f4fd;
-            border-color: #3498db;
+        .calendar-cell:hover {
+            background-color: #f8f9fa !important;
+            transform: scale(1.05);
+            z-index: 10;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
         }
         
-        .calendar-day.vacation {
-            background-color: #d4edda;
-            border-color: #27ae60;
+        .cell-vacation { background-color: #d4edda !important; }
+        .cell-permission { background-color: #fff3cd !important; }
+        .cell-incapacity { background-color: #f8d7da !important; }
+        .cell-task { background-color: #d1ecf1 !important; }
+        
+        .task-code {
+            font-size: 0.7rem;
+            font-weight: bold;
+            display: block;
+            text-align: center;
         }
         
-        .calendar-day.absence {
-            background-color: #f8d7da;
-            border-color: #e74c3c;
+        .day-number {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            font-size: 0.6rem;
+            color: #6c757d;
         }
         
+        .month-tab.active {
+            background-color: var(--ice-blue) !important;
+            color: white !important;
+            font-weight: bold;
+        }
+        
+        .stats-card {
+            border-left: 4px solid var(--ice-blue);
+        }
+        
+        /* Estilos para móvil */
+        @media (max-width: 768px) {
+            .calendar-cell {
+                width: 35px;
+                height: 35px;
+                font-size: 0.7rem;
+            }
+            
+            .table-responsive {
+                font-size: 0.85rem;
+            }
+            
+            .advisor-name {
+                max-width: 120px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+        }
+        
+        /* Animaciones */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.3s ease-out;
+        }
+        
+        /* Estilos para modales */
+        .modal-ice .modal-header {
+            background-color: var(--ice-blue);
+            color: white;
+        }
+        
+        /* Notificaciones */
         .notification-badge {
             position: absolute;
             top: -5px;
             right: -5px;
+            font-size: 0.6rem;
         }
         
-        .nav-tabs .nav-link.active {
-            border-bottom: 3px solid var(--secondary-color);
-            font-weight: bold;
+        /* Loading spinner */
+        .spinner-border.ice-spinner {
+            color: var(--ice-blue);
+            width: 1.5rem;
+            height: 1.5rem;
         }
     </style>
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#005CA9">
 </head>
 <body>
-    <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <!-- ========== NAVEGACIÓN ========== -->
+    <nav class="navbar navbar-expand-lg ice-header sticky-top">
         <div class="container-fluid">
-            <a class="navbar-brand" href="#">
-                <img src="logo.png" alt="Logo" height="30" class="d-inline-block align-text-top">
-                Gestión Curricular - Formación Tecnológica
+            <a class="navbar-brand d-flex align-items-center" href="#">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/6b/ICE_Group_logo.svg/240px-ICE_Group_logo.svg.png" 
+                     height="40" class="d-inline-block align-top me-2" alt="ICE Logo">
+                <div>
+                    <span class="fw-bold">Gestión Curricular</span><br>
+                    <small class="opacity-75">Formación Tecnológica</small>
+                </div>
             </a>
-            <div class="d-flex align-items-center">
-                <span class="text-light me-3">Bienvenido, Administrador</span>
-                <div class="dropdown">
-                    <button class="btn btn-outline-light dropdown-toggle" type="button" id="userMenu" data-bs-toggle="dropdown">
-                        <i class="bi bi-person-circle"></i>
-                    </button>
-                    <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="#"><i class="bi bi-gear"></i> Configuración</a></li>
-                        <li><a class="dropdown-item" href="#"><i class="bi bi-bell"></i> Notificaciones</a></li>
-                        <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item text-danger" href="#"><i class="bi bi-box-arrow-right"></i> Cerrar sesión</a></li>
-                    </ul>
+            
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="#dashboard" onclick="showSection('dashboard')">
+                            <i class="bi bi-speedometer2"></i> Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#calendar" onclick="showSection('calendar')">
+                            <i class="bi bi-calendar3"></i> Calendario
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#advisors" onclick="showSection('advisors')">
+                            <i class="bi bi-people-fill"></i> Asesores
+                            <span class="badge bg-light text-dark ms-1" id="advisorCountBadge">8</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#tasks" onclick="showSection('tasks')">
+                            <i class="bi bi-list-task"></i> Tareas
+                            <span class="badge bg-warning ms-1" id="taskCountBadge">24</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#reports" onclick="showSection('reports')">
+                            <i class="bi bi-bar-chart"></i> Reportes
+                        </a>
+                    </li>
+                </ul>
+                
+                <div class="d-flex ms-3">
+                    <div class="dropdown">
+                        <button class="btn btn-outline-light dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-person-circle"></i> Admin
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="#" onclick="exportBackup()">
+                                <i class="bi bi-download"></i> Respaldar Datos
+                            </a></li>
+                            <li><a class="dropdown-item" href="#" onclick="importBackup()">
+                                <i class="bi bi-upload"></i> Restaurar Datos
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="#" onclick="installPWA()">
+                                <i class="bi bi-phone"></i> Instalar App
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item text-danger" href="#" onclick="clearCache()">
+                                <i class="bi bi-trash"></i> Limpiar Cache
+                            </a></li>
+                        </ul>
+                    </div>
                 </div>
             </div>
         </div>
     </nav>
 
-    <!-- Dashboard Principal -->
-    <div class="container-fluid mt-4">
-        <div class="row">
-            <!-- Sidebar -->
-            <div class="col-md-2">
-                <div class="list-group">
-                    <a href="#dashboard" class="list-group-item list-group-item-action active">
-                        <i class="bi bi-speedometer2"></i> Dashboard
-                    </a>
-                    <a href="#calendario" class="list-group-item list-group-item-action">
-                        <i class="bi bi-calendar3"></i> Calendario
-                    </a>
-                    <a href="#tareas" class="list-group-item list-group-item-action">
-                        <i class="bi bi-list-task"></i> Tareas
-                        <span class="badge bg-danger float-end">3</span>
-                    </a>
-                    <a href="#asesores" class="list-group-item list-group-item-action">
-                        <i class="bi bi-people"></i> Asesores
-                    </a>
-                    <a href="#informes" class="list-group-item list-group-item-action">
-                        <i class="bi bi-file-text"></i> Informes
-                        <span class="badge bg-warning float-end">2</span>
-                    </a>
-                    <a href="#reportes" class="list-group-item list-group-item-action">
-                        <i class="bi bi-bar-chart"></i> Reportes
-                    </a>
-                    <a href="#configuracion" class="list-group-item list-group-item-action">
-                        <i class="bi bi-gear"></i> Configuración
-                    </a>
+    <!-- ========== CONTENIDO PRINCIPAL ========== -->
+    <div class="container-fluid mt-3">
+        
+        <!-- Sección: DASHBOARD -->
+        <section id="dashboard" class="section-content fade-in">
+            <div class="row mb-4">
+                <div class="col-12">
+                    <h2><i class="bi bi-speedometer2"></i> Dashboard</h2>
+                    <p class="text-muted">Resumen general de actividades y estadísticas</p>
+                </div>
+            </div>
+            
+            <!-- Tarjetas de estadísticas -->
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="card ice-card stats-card">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h6 class="card-subtitle mb-2 text-muted">Asesores Activos</h6>
+                                    <h2 class="card-title" id="statAdvisors">8</h2>
+                                </div>
+                                <div class="text-primary">
+                                    <i class="bi bi-people-fill" style="font-size: 2rem;"></i>
+                                </div>
+                            </div>
+                            <p class="card-text"><small>Total en el equipo</small></p>
+                        </div>
+                    </div>
                 </div>
                 
-                <!-- Notificaciones rápidas -->
-                <div class="mt-4 p-3 border rounded">
-                    <h6><i class="bi bi-bell"></i> Alertas</h6>
-                    <div class="alert alert-warning p-2 mb-2">
-                        <small>Kevin necesita apoyo con Tarea T19</small>
+                <div class="col-md-3">
+                    <div class="card ice-card stats-card">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h6 class="card-subtitle mb-2 text-muted">Tareas Activas</h6>
+                                    <h2 class="card-title" id="statTasks">24</h2>
+                                </div>
+                                <div class="text-warning">
+                                    <i class="bi bi-list-task" style="font-size: 2rem;"></i>
+                                </div>
+                            </div>
+                            <p class="card-text"><small>Este mes</small></p>
+                        </div>
                     </div>
-                    <div class="alert alert-info p-2 mb-2">
-                        <small>Informe pendiente de revisión</small>
+                </div>
+                
+                <div class="col-md-3">
+                    <div class="card ice-card stats-card">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h6 class="card-subtitle mb-2 text-muted">Días Vacaciones</h6>
+                                    <h2 class="card-title" id="statVacations">12</h2>
+                                </div>
+                                <div class="text-success">
+                                    <i class="bi bi-umbrella" style="font-size: 2rem;"></i>
+                                </div>
+                            </div>
+                            <p class="card-text"><small>Programados</small></p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-3">
+                    <div class="card ice-card stats-card">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h6 class="card-subtitle mb-2 text-muted">Solicitudes</h6>
+                                    <h2 class="card-title" id="statRequests">3</h2>
+                                </div>
+                                <div class="text-danger">
+                                    <i class="bi bi-life-preserver" style="font-size: 2rem;"></i>
+                                </div>
+                            </div>
+                            <p class="card-text"><small>Pendientes de revisión</small></p>
+                        </div>
                     </div>
                 </div>
             </div>
-
-            <!-- Contenido Principal -->
-            <div class="col-md-10">
-                <!-- Filtros y búsqueda -->
-                <div class="row mb-4">
-                    <div class="col-md-4">
-                        <select class="form-select" id="monthSelect">
-                            <option value="1">Enero</option>
-                            <option value="2">Febrero</option>
-                            <option value="3" selected>Marzo</option>
-                            <!-- Resto de meses -->
-                        </select>
-                    </div>
-                    <div class="col-md-4">
-                        <select class="form-select" id="advisorSelect">
-                            <option value="">Todos los asesores</option>
-                            <option value="karen">Karen White Acuña</option>
-                            <option value="moises">Moisés Abarca Pérez</option>
-                            <!-- Resto de asesores -->
-                        </select>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="input-group">
-                            <input type="text" class="form-control" placeholder="Buscar tarea...">
-                            <button class="btn btn-primary">Buscar</button>
+            
+            <!-- Gráficos -->
+            <div class="row mt-4">
+                <div class="col-md-6">
+                    <div class="card ice-card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Distribución de Tareas</h5>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="chartTasksDistribution" height="250"></canvas>
                         </div>
                     </div>
                 </div>
-
-                <!-- Tarjetas de resumen -->
-                <div class="row">
-                    <div class="col-md-3">
-                        <div class="card dashboard-card bg-primary text-white">
-                            <div class="card-body">
-                                <h5 class="card-title">Tareas Activas</h5>
-                                <h2 class="card-text">42</h2>
-                                <p class="card-text"><small>Este mes</small></p>
-                            </div>
+                
+                <div class="col-md-6">
+                    <div class="card ice-card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Actividad por Mes</h5>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="chartMonthlyActivity" height="250"></canvas>
                         </div>
                     </div>
-                    <div class="col-md-3">
-                        <div class="card dashboard-card bg-success text-white">
-                            <div class="card-body">
-                                <h5 class="card-title">Asesores Activos</h5>
-                                <h2 class="card-text">8</h2>
-                                <p class="card-text"><small>Total equipo</small></p>
-                            </div>
+                </div>
+            </div>
+            
+            <!-- Alertas recientes -->
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="card ice-card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">Alertas Recientes</h5>
+                            <button class="btn btn-sm btn-outline-primary" onclick="markAllAsRead()">
+                                Marcar todas como leídas
+                            </button>
                         </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="card dashboard-card bg-warning text-white">
-                            <div class="card-body">
-                                <h5 class="card-title">Informes Pendientes</h5>
-                                <h2 class="card-text">5</h2>
-                                <p class="card-text"><small>Requieren atención</small></p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="card dashboard-card bg-info text-white">
-                            <div class="card-body">
-                                <h5 class="card-title">Vacaciones</h5>
-                                <h2 class="card-text">12</h2>
-                                <p class="card-text"><small>Días programados</small></p>
+                        <div class="card-body">
+                            <div class="list-group" id="recentAlerts">
+                                <!-- Las alertas se cargan dinámicamente -->
                             </div>
                         </div>
                     </div>
                 </div>
+            </div>
+        </section>
 
-                <!-- Pestañas principales -->
-                <ul class="nav nav-tabs mt-4" id="mainTabs">
-                    <li class="nav-item">
-                        <a class="nav-link active" data-bs-toggle="tab" href="#calendarTab">Calendario</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" data-bs-toggle="tab" href="#tasksTab">Gestión de Tareas</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" data-bs-toggle="tab" href="#reportsTab">Reportes</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" data-bs-toggle="tab" href="#supportTab">Solicitudes de Apoyo</a>
-                    </li>
-                </ul>
-
-                <div class="tab-content mt-3" id="mainTabsContent">
-                    <!-- Tab Calendario -->
-                    <div class="tab-pane fade show active" id="calendarTab">
-                        <div class="card">
-                            <div class="card-header">
-                                <h5>Calendario de Asignaciones - Marzo 2026</h5>
-                            </div>
-                            <div class="card-body">
-                                <div id="calendarView"></div>
+        <!-- Sección: CALENDARIO -->
+        <section id="calendar" class="section-content d-none fade-in">
+            <div class="row mb-4">
+                <div class="col-md-8">
+                    <h2><i class="bi bi-calendar3"></i> Calendario de Actividades</h2>
+                    <p class="text-muted">Planificación mensual de tareas y ausencias</p>
+                </div>
+                <div class="col-md-4">
+                    <div class="input-group">
+                        <select class="form-select" id="yearSelect">
+                            <option value="2024">2024</option>
+                            <option value="2025">2025</option>
+                            <option value="2026" selected>2026</option>
+                            <option value="2027">2027</option>
+                        </select>
+                        <button class="btn btn-primary" onclick="changeYear()">
+                            <i class="bi bi-arrow-clockwise"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Tabs de meses -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="d-flex flex-wrap gap-2" id="monthTabs">
+                        <!-- Los tabs se generan dinámicamente -->
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Calendario -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="card ice-card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h4 class="mb-0" id="currentMonthTitle">Enero 2026</h4>
+                            <div class="btn-group">
+                                <button class="btn btn-sm btn-outline-primary" onclick="previousMonth()">
+                                    <i class="bi bi-chevron-left"></i> Anterior
+                                </button>
+                                <button class="btn btn-sm btn-outline-primary" onclick="nextMonth()">
+                                    Siguiente <i class="bi bi-chevron-right"></i>
+                                </button>
                             </div>
                         </div>
-                    </div>
-
-                    <!-- Tab Gestión de Tareas -->
-                    <div class="tab-pane fade" id="tasksTab">
-                        <div class="row">
-                            <div class="col-md-8">
-                                <div class="card">
-                                    <div class="card-header d-flex justify-content-between">
-                                        <h5>Lista de Tareas</h5>
-                                        <button class="btn btn-sm btn-primary" onclick="openTaskModal()">
-                                            <i class="bi bi-plus"></i> Nueva Tarea
-                                        </button>
-                                    </div>
-                                    <div class="card-body">
-                                        <table class="table table-hover">
-                                            <thead>
-                                                <tr>
-                                                    <th>Código</th>
-                                                    <th>Descripción</th>
-                                                    <th>Asignado a</th>
-                                                    <th>Estado</th>
-                                                    <th>Acciones</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody id="tasksTable">
-                                                <!-- Datos cargados dinámicamente -->
-                                            </tbody>
-                                        </table>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-sm align-middle" id="calendarTable">
+                                    <thead id="calendarHeader">
+                                        <!-- Encabezado dinámico -->
+                                    </thead>
+                                    <tbody id="calendarBody">
+                                        <!-- Cuerpo dinámico -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="card-footer">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6>Leyenda:</h6>
+                                    <div class="d-flex flex-wrap gap-2">
+                                        <span class="badge bg-success">V = Vacaciones</span>
+                                        <span class="badge bg-warning">P = Permisos</span>
+                                        <span class="badge bg-danger">I = Incapacidad</span>
+                                        <span class="badge bg-info">T# = Tarea Asignada</span>
                                     </div>
                                 </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="card">
-                                    <div class="card-header">
-                                        <h5>Tipos de Ausencia</h5>
-                                    </div>
-                                    <div class="card-body">
-                                        <div class="mb-2">
-                                            <span class="badge bg-success">V</span> Vacaciones
-                                        </div>
-                                        <div class="mb-2">
-                                            <span class="badge bg-warning">P</span> Permisos
-                                        </div>
-                                        <div class="mb-2">
-                                            <span class="badge bg-danger">I</span> Incapacidad
-                                        </div>
-                                        <div class="mb-2">
-                                            <span class="badge bg-primary">T#</span> Tarea Asignada
-                                        </div>
-                                        <hr>
-                                        <h6>Proyectos Principales</h6>
-                                        <ul>
-                                            <li>Diseño de recursos didácticos</li>
-                                            <li>Actualización módulos</li>
-                                            <li>Guías trabajo autónomo</li>
-                                            <li>Guías EPJA</li>
-                                        </ul>
-                                    </div>
+                                <div class="col-md-6 text-end">
+                                    <button class="btn btn-success" onclick="exportCalendarToExcel()">
+                                        <i class="bi bi-file-excel"></i> Exportar a Excel
+                                    </button>
+                                    <button class="btn btn-primary" onclick="printCalendar()">
+                                        <i class="bi bi-printer"></i> Imprimir
+                                    </button>
                                 </div>
                             </div>
                         </div>
                     </div>
+                </div>
+            </div>
+        </section>
 
-                    <!-- Tab Reportes -->
-                    <div class="tab-pane fade" id="reportsTab">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="card">
-                                    <div class="card-header">
-                                        <h5>Distribución de Tareas por Asesor</h5>
-                                    </div>
-                                    <div class="card-body">
-                                        <canvas id="tasksChart"></canvas>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="card">
-                                    <div class="card-header">
-                                        <h5>Estadísticas Mensuales</h5>
-                                    </div>
-                                    <div class="card-body">
-                                        <canvas id="monthlyStats"></canvas>
-                                    </div>
-                                </div>
+        <!-- Sección: ASESORES -->
+        <section id="advisors" class="section-content d-none fade-in">
+            <div class="row mb-4">
+                <div class="col-md-8">
+                    <h2><i class="bi bi-people-fill"></i> Gestión de Asesores</h2>
+                    <p class="text-muted">Administrar el equipo de asesores nacionales</p>
+                </div>
+                <div class="col-md-4 text-end">
+                    <button class="btn btn-success" onclick="showAdvisorModal('new')">
+                        <i class="bi bi-person-plus"></i> Nuevo Asesor
+                    </button>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-12">
+                    <div class="card ice-card">
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>#</th>
+                                            <th>Nombre Completo</th>
+                                            <th>Correo Electrónico</th>
+                                            <th>Tareas Asignadas</th>
+                                            <th>Estado</th>
+                                            <th>Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="advisorsTable">
+                                        <!-- Datos cargados dinámicamente -->
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
                     </div>
+                </div>
+            </div>
+        </section>
 
-                    <!-- Tab Solicitudes de Apoyo -->
-                    <div class="tab-pane fade" id="supportTab">
-                        <div class="card">
-                            <div class="card-header">
-                                <h5>Solicitudes de Apoyo Pendientes</h5>
+        <!-- Sección: TAREAS -->
+        <section id="tasks" class="section-content d-none fade-in">
+            <div class="row mb-4">
+                <div class="col-md-8">
+                    <h2><i class="bi bi-list-task"></i> Catálogo de Tareas</h2>
+                    <p class="text-muted">Administrar las tareas disponibles para asignar</p>
+                </div>
+                <div class="col-md-4 text-end">
+                    <button class="btn btn-success" onclick="showTaskModal('new')">
+                        <i class="bi bi-plus-circle"></i> Nueva Tarea
+                    </button>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-12">
+                    <div class="card ice-card">
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Código</th>
+                                            <th>Descripción</th>
+                                            <th>Tipo</th>
+                                            <th>Proyecto</th>
+                                            <th>Asignaciones</th>
+                                            <th>Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tasksTable">
+                                        <!-- Datos cargados dinámicamente -->
+                                    </tbody>
+                                </table>
                             </div>
-                            <div class="card-body">
-                                <div id="supportRequests">
-                                    <!-- Solicitudes cargadas dinámicamente -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Sección: REPORTES -->
+        <section id="reports" class="section-content d-none fade-in">
+            <div class="row mb-4">
+                <div class="col-12">
+                    <h2><i class="bi bi-bar-chart"></i> Reportes y Estadísticas</h2>
+                    <p class="text-muted">Análisis y reportes del equipo y actividades</p>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card ice-card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Reporte de Productividad</h5>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="chartProductivity" height="300"></canvas>
+                        </div>
+                        <div class="card-footer">
+                            <button class="btn btn-sm btn-outline-primary" onclick="generateProductivityReport()">
+                                <i class="bi bi-download"></i> Descargar Reporte
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="card ice-card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Control de Ausencias</h5>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="chartAbsences" height="300"></canvas>
+                        </div>
+                        <div class="card-footer">
+                            <button class="btn btn-sm btn-outline-primary" onclick="generateAbsenceReport()">
+                                <i class="bi bi-download"></i> Descargar Reporte
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="card ice-card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">Generar Reportes Personalizados</h5>
+                            <div class="btn-group">
+                                <button class="btn btn-sm btn-primary" onclick="generateMonthlyReport()">
+                                    Reporte Mensual
+                                </button>
+                                <button class="btn btn-sm btn-success" onclick="generateQuarterlyReport()">
+                                    Reporte Trimestral
+                                </button>
+                                <button class="btn btn-sm btn-warning" onclick="generateAnnualReport()">
+                                    Reporte Anual
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label class="form-label">Fecha Inicio</label>
+                                        <input type="date" class="form-control" id="reportStartDate">
+                                    </div>
                                 </div>
-                                <button class="btn btn-primary mt-3" onclick="openSupportForm()">
-                                    <i class="bi bi-plus-circle"></i> Enviar Nueva Solicitud
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label class="form-label">Fecha Fin</label>
+                                        <input type="date" class="form-control" id="reportEndDate">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label class="form-label">Formato</label>
+                                        <select class="form-select" id="reportFormat">
+                                            <option value="excel">Excel (.xlsx)</option>
+                                            <option value="pdf">PDF (.pdf)</option>
+                                            <option value="csv">CSV (.csv)</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="text-center">
+                                <button class="btn btn-lg btn-primary" onclick="generateCustomReport()">
+                                    <i class="bi bi-gear"></i> Generar Reporte Personalizado
                                 </button>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
+        </section>
+    </div>
+
+    <!-- ========== MODALES ========== -->
+
+    <!-- Modal: Editar Celda del Calendario -->
+    <div class="modal fade" id="editCellModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header ice-header">
+                    <h5 class="modal-title text-white">Editar Asignación</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Asesor:</label>
+                        <input type="text" class="form-control" id="editCellAdvisor" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Fecha:</label>
+                        <input type="text" class="form-control" id="editCellDate" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Asignación Actual:</label>
+                        <input type="text" class="form-control" id="editCellCurrent" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Nueva Asignación:</label>
+                        <select class="form-select" id="editCellNewValue">
+                            <option value="">-- Seleccionar --</option>
+                            <optgroup label="Ausencias">
+                                <option value="V">V - Vacaciones</option>
+                                <option value="P">P - Permisos</option>
+                                <option value="I">I - Incapacidad</option>
+                            </optgroup>
+                            <optgroup label="Tareas">
+                                <!-- Se llena dinámicamente -->
+                            </optgroup>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Notas (opcional):</label>
+                        <textarea class="form-control" id="editCellNotes" rows="2"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-danger" onclick="clearCellAssignment()">Limpiar</button>
+                    <button type="button" class="btn btn-primary" onclick="saveCellEdit()">Guardar Cambios</button>
+                </div>
+            </div>
         </div>
     </div>
 
-    <!-- Modal para nueva tarea -->
-    <div class="modal fade" id="taskModal" tabindex="-1">
-        <div class="modal-dialog modal-lg">
+    <!-- Modal: Gestión de Asesores -->
+    <div class="modal fade" id="advisorModal" tabindex="-1">
+        <div class="modal-dialog">
             <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Asignar Nueva Tarea</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <div class="modal-header ice-header">
+                    <h5 class="modal-title text-white" id="advisorModalTitle">Nuevo Asesor</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <form id="taskForm">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label">Código de Tarea</label>
-                                    <input type="text" class="form-control" placeholder="Ej: T21, T14, T5">
-                                </div>
-                                <div class="mb-3">
-                                    <label class="form-label">Descripción</label>
-                                    <textarea class="form-control" rows="3"></textarea>
-                                </div>
-                                <div class="mb-3">
-                                    <label class="form-label">Proyecto</label>
-                                    <select class="form-select">
-                                        <option>Diseño de recursos didácticos</option>
-                                        <option>Propuesta Actualización Módulos</option>
-                                        <option>Propuesta Actualización Docente</option>
-                                        <option>Guías trabajo autónomo</option>
-                                        <option>Guías EPJA</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label">Asignar a</label>
-                                    <select class="form-select" multiple>
-                                        <option>Karen White Acuña</option>
-                                        <option>Moisés Abarca Pérez</option>
-                                        <option>Yolanda Villanueva Agüero</option>
-                                        <option>Allan Ulate Araya</option>
-                                        <option>Mariana Pérez Aguilar</option>
-                                        <option>Daniela Villanueva Piva</option>
-                                        <option>Kevin Sánchez Bogarín</option>
-                                        <option>Leonardo Calvo Calvo</option>
-                                    </select>
-                                </div>
-                                <div class="mb-3">
-                                    <label class="form-label">Fecha Inicio</label>
-                                    <input type="date" class="form-control">
-                                </div>
-                                <div class="mb-3">
-                                    <label class="form-label">Fecha Fin</label>
-                                    <input type="date" class="form-control">
-                                </div>
-                                <div class="mb-3">
-                                    <label class="form-label">Prioridad</label>
-                                    <select class="form-select">
-                                        <option>Baja</option>
-                                        <option>Media</option>
-                                        <option>Alta</option>
-                                        <option>Crítica</option>
-                                    </select>
-                                </div>
-                            </div>
+                    <form id="advisorForm">
+                        <input type="hidden" id="advisorId">
+                        <div class="mb-3">
+                            <label class="form-label">Nombre Completo *</label>
+                            <input type="text" class="form-control" id="advisorName" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Correo Electrónico *</label>
+                            <input type="email" class="form-control" id="advisorEmail" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Teléfono</label>
+                            <input type="tel" class="form-control" id="advisorPhone">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Área de Especialización</label>
+                            <select class="form-select" id="advisorSpecialty">
+                                <option value="">-- Seleccionar --</option>
+                                <option value="curricular">Gestión Curricular</option>
+                                <option value="tecnologica">Formación Tecnológica</option>
+                                <option value="docente">Desarrollo Docente</option>
+                                <option value="recursos">Diseño de Recursos</option>
+                                <option value="evaluacion">Evaluación Educativa</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Estado</label>
+                            <select class="form-select" id="advisorStatus">
+                                <option value="active">Activo</option>
+                                <option value="inactive">Inactivo</option>
+                                <option value="vacation">Vacaciones</option>
+                                <option value="license">Licencia</option>
+                            </select>
+                        </div>
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="advisorReceiveNotifications">
+                            <label class="form-check-label" for="advisorReceiveNotifications">
+                                Recibir notificaciones por correo
+                            </label>
                         </div>
                     </form>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-danger" id="advisorDeleteBtn" onclick="deleteAdvisor()" style="display: none;">Eliminar</button>
+                    <button type="button" class="btn btn-primary" onclick="saveAdvisor()">Guardar Asesor</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Gestión de Tareas -->
+    <div class="modal fade" id="taskModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header ice-header">
+                    <h5 class="modal-title text-white" id="taskModalTitle">Nueva Tarea</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="taskForm">
+                        <input type="hidden" id="taskId">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Código de Tarea *</label>
+                                    <input type="text" class="form-control" id="taskCode" required>
+                                    <small class="form-text text-muted">Ej: T1, T2, T25, etc.</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Tipo</label>
+                                    <select class="form-select" id="taskType">
+                                        <option value="normal">Normal</option>
+                                        <option value="urgent">Urgente</option>
+                                        <option value="recurrent">Recurrente</option>
+                                        <option value="project">Proyecto</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Descripción *</label>
+                            <textarea class="form-control" id="taskDescription" rows="3" required></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Proyecto Asociado</label>
+                            <select class="form-select" id="taskProject">
+                                <option value="">-- Seleccionar --</option>
+                                <option value="diseno_recursos">Diseño de recursos didácticos</option>
+                                <option value="actualizacion_modulos">Actualización Módulos Ciclo Diversificado</option>
+                                <option value="actualizacion_docente">Actualización Docente</option>
+                                <option value="guias_autonomo">Guías de trabajo autónomo</option>
+                                <option value="guias_epja">Guías Módulos EPJA</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Tiempo Estimado (horas)</label>
+                            <input type="number" class="form-control" id="taskEstimatedTime" min="1" max="100">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Dificultad</label>
+                            <select class="form-select" id="taskDifficulty">
+                                <option value="low">Baja</option>
+                                <option value="medium" selected>Media</option>
+                                <option value="high">Alta</option>
+                                <option value="very_high">Muy Alta</option>
+                            </select>
+                        </div>
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="taskActive">
+                            <label class="form-check-label" for="taskActive">
+                                Tarea activa (disponible para asignar)
+                            </label>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-danger" id="taskDeleteBtn" onclick="deleteTask()" style="display: none;">Eliminar</button>
                     <button type="button" class="btn btn-primary" onclick="saveTask()">Guardar Tarea</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Modal para informes de apoyo -->
+    <!-- Modal: Solicitud de Apoyo -->
     <div class="modal fade" id="supportModal" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Enviar Informe de Apoyo</h5>
+                <div class="modal-header bg-warning">
+                    <h5 class="modal-title">Solicitud de Apoyo</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <form id="supportForm">
-                        <div class="mb-3">
-                            <label class="form-label">Tarea que requiere apoyo</label>
-                            <select class="form-select">
-                                <option>T21 - Diseño módulos avanzados</option>
-                                <option>T14 - Revisión curricular</option>
-                                <option>T5 - Elaboración guías</option>
-                                <!-- Otras tareas -->
-                            </select>
+                    <div class="mb-3">
+                        <label class="form-label">Tarea que requiere apoyo</label>
+                        <select class="form-select" id="supportTask">
+                            <!-- Se llena dinámicamente -->
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Descripción del problema *</label>
+                        <textarea class="form-control" id="supportDescription" rows="4" required 
+                                  placeholder="Describa en detalle en qué necesita apoyo..."></textarea>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Urgencia</label>
+                                <select class="form-select" id="supportUrgency">
+                                    <option value="low">Baja (resolver en 1 semana)</option>
+                                    <option value="medium" selected>Media (resolver en 2-3 días)</option>
+                                    <option value="high">Alta (resolver en 24 horas)</option>
+                                    <option value="critical">Crítica (resolver inmediatamente)</option>
+                                </select>
+                            </div>
                         </div>
-                        <div class="mb-3">
-                            <label class="form-label">Descripción del problema</label>
-                            <textarea class="form-control" rows="4" placeholder="Describa en qué necesita apoyo específico..."></textarea>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Adjuntar archivo (opcional)</label>
+                                <input type="file" class="form-control" id="supportFile">
+                            </div>
                         </div>
-                        <div class="mb-3">
-                            <label class="form-label">Urgencia</label>
-                            <select class="form-select">
-                                <option>Baja (resolver esta semana)</option>
-                                <option>Media (resolver en 2-3 días)</option>
-                                <option>Alta (resolver en 24 horas)</option>
-                                <option>Crítica (resolver inmediatamente)</option>
-                            </select>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Adjuntar archivos</label>
-                            <input type="file" class="form-control" multiple>
-                        </div>
-                    </form>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="button" class="btn btn-primary" onclick="submitSupportRequest()">Enviar Solicitud</button>
+                    <button type="button" class="btn btn-warning" onclick="submitSupportRequest()">
+                        <i class="bi bi-send"></i> Enviar Solicitud
+                    </button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Scripts -->
+    <!-- Modal: Notificaciones -->
+    <div class="modal fade" id="notificationsModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header ice-header">
+                    <h5 class="modal-title text-white">Centro de Notificaciones</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="list-group" id="notificationsList">
+                        <!-- Notificaciones dinámicas -->
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" onclick="clearAllNotifications()">
+                        Limpiar Todas
+                    </button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== FOOTER ========== -->
+    <footer class="mt-5 py-3 bg-light border-top">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-md-6">
+                    <small class="text-muted">
+                        <i class="bi bi-shield-check"></i> Sistema de Gestión Curricular - ICE<br>
+                        <i class="bi bi-calendar-check"></i> Versión 2.0 | Última actualización: <span id="lastUpdate"></span>
+                    </small>
+                </div>
+                <div class="col-md-6 text-end">
+                    <small class="text-muted">
+                        <i class="bi bi-database"></i> Datos almacenados localmente<br>
+                        <i class="bi bi-cloud-check"></i> Backup automático activo
+                    </small>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- ========== SCRIPTS PRINCIPALES ========== -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
     <script>
-        // Datos de ejemplo basados en tu Excel
-        const tasks = [
-            { id: 1, code: 'T21', description: 'Diseño módulos avanzados', assignedTo: ['Karen', 'Moisés'], status: 'En progreso', project: 'Actualización Módulos' },
-            { id: 2, code: 'T14', description: 'Revisión curricular', assignedTo: ['Todos'], status: 'Pendiente', project: 'Actualización Docente' },
-            { id: 3, code: 'T5', description: 'Elaboración guías de trabajo', assignedTo: ['Leonardo', 'Kevin', 'Mariana'], status: 'Completado', project: 'Recursos Didácticos' },
-            // Más tareas...
-        ];
+        // ============================================
+        // SISTEMA COMPLETO DE GESTIÓN CURRICULAR ICE
+        // ============================================
 
-        const advisors = [
-            { name: 'Karen White Acuña', tasks: 12, vacations: 5, active: true },
-            { name: 'Moisés Abarca Pérez', tasks: 10, vacations: 3, active: true },
-            { name: 'Yolanda Villanueva Agüero', tasks: 8, vacations: 2, active: true },
-            // Más asesores...
-        ];
+        // Variables globales
+        let currentYear = 2026;
+        let currentMonth = 0; // 0 = Enero, 11 = Diciembre
+        let currentAdvisorId = null;
+        let currentTaskId = null;
+        let currentCellData = null;
 
-        // Inicializar gráficos
-        function initializeCharts() {
+        // Datos iniciales (persistencia en localStorage)
+        const initialData = {
+            advisors: [
+                {
+                    id: 1,
+                    name: "Karen White Acuña",
+                    email: "karen.white@ice.go.cr",
+                    phone: "",
+                    specialty: "curricular",
+                    status: "active",
+                    notifications: true,
+                    created: new Date().toISOString()
+                },
+                {
+                    id: 2,
+                    name: "Moisés Abarca Pérez",
+                    email: "moises.abarca@ice.go.cr",
+                    phone: "",
+                    specialty: "tecnologica",
+                    status: "active",
+                    notifications: true,
+                    created: new Date().toISOString()
+                },
+                {
+                    id: 3,
+                    name: "Yolanda Villanueva Agüero",
+                    email: "yolanda.villanueva@ice.go.cr",
+                    phone: "",
+                    specialty: "docente",
+                    status: "active",
+                    notifications: true,
+                    created: new Date().toISOString()
+                },
+                {
+                    id: 4,
+                    name: "Mariana Pérez Aguilar",
+                    email: "mariana.perez@ice.go.cr",
+                    phone: "",
+                    specialty: "recursos",
+                    status: "active",
+                    notifications: true,
+                    created: new Date().toISOString()
+                },
+                {
+                    id: 5,
+                    name: "Daniela Villanueva Piva",
+                    email: "daniela.villanueva@ice.go.cr",
+                    phone: "",
+                    specialty: "evaluacion",
+                    status: "active",
+                    notifications: true,
+                    created: new Date().toISOString()
+                },
+                {
+                    id: 6,
+                    name: "Kevin Sánchez Bogarín",
+                    email: "kevin.sanchez@ice.go.cr",
+                    phone: "",
+                    specialty: "tecnologica",
+                    status: "active",
+                    notifications: true,
+                    created: new Date().toISOString()
+                },
+                {
+                    id: 7,
+                    name: "Leonardo Calvo Calvo",
+                    email: "leonardo.calvo@ice.go.cr",
+                    phone: "",
+                    specialty: "curricular",
+                    status: "active",
+                    notifications: true,
+                    created: new Date().toISOString()
+                },
+                {
+                    id: 8,
+                    name: "Allan Ulate Araya",
+                    email: "allan.ulate@ice.go.cr",
+                    phone: "",
+                    specialty: "docente",
+                    status: "active",
+                    notifications: true,
+                    created: new Date().toISOString()
+                }
+            ],
+            
+            tasks: [
+                { code: "V", description: "Vacaciones", type: "absence", project: "", estimatedTime: 8, difficulty: "low", active: true },
+                { code: "P", description: "Permisos", type: "absence", project: "", estimatedTime: 8, difficulty: "low", active: true },
+                { code: "I", description: "Incapacidad", type: "absence", project: "", estimatedTime: 8, difficulty: "low", active: true },
+                { code: "T1", description: "Diseño curricular básico", type: "normal", project: "actualizacion_modulos", estimatedTime: 40, difficulty: "medium", active: true },
+                { code: "T2", description: "Revisión de módulos existentes", type: "normal", project: "actualizacion_modulos", estimatedTime: 30, difficulty: "medium", active: true },
+                { code: "T3", description: "Elaboración de guías didácticas", type: "normal", project: "diseno_recursos", estimatedTime: 25, difficulty: "medium", active: true },
+                { code: "T4", description: "Capacitación docente", type: "project", project: "actualizacion_docente", estimatedTime: 60, difficulty: "high", active: true },
+                { code: "T5", description: "Evaluación de recursos educativos", type: "normal", project: "diseno_recursos", estimatedTime: 20, difficulty: "medium", active: true },
+                { code: "T6", description: "Actualización de contenido tecnológico", type: "normal", project: "actualizacion_modulos", estimatedTime: 35, difficulty: "high", active: true },
+                { code: "T7", description: "Coordinación con áreas técnicas", type: "recurrent", project: "", estimatedTime: 15, difficulty: "medium", active: true },
+                { code: "T8", description: "Reuniones de seguimiento", type: "recurrent", project: "", estimatedTime: 10, difficulty: "low", active: true },
+                { code: "T9", description: "Informes mensuales", type: "recurrent", project: "", estimatedTime: 8, difficulty: "low", active: true },
+                { code: "T10", description: "Planificación trimestral", type: "normal", project: "", estimatedTime: 20, difficulty: "medium", active: true },
+                { code: "T11", description: "Desarrollo de material complementario", type: "normal", project: "diseno_recursos", estimatedTime: 30, difficulty: "medium", active: true },
+                { code: "T12", description: "Validación curricular", type: "normal", project: "actualizacion_modulos", estimatedTime: 25, difficulty: "high", active: true },
+                { code: "T13", description: "Gestión de proyectos educativos", type: "project", project: "", estimatedTime: 50, difficulty: "high", active: true },
+                { code: "T14", description: "Supervisión de procesos", type: "normal", project: "", estimatedTime: 15, difficulty: "medium", active: true },
+                { code: "T15", description: "Innovación educativa", type: "project", project: "", estimatedTime: 40, difficulty: "very_high", active: true },
+                { code: "T19", description: "Tecnología educativa", type: "project", project: "actualizacion_docente", estimatedTime: 45, difficulty: "high", active: true },
+                { code: "T20", description: "Diseño instruccional", type: "normal", project: "diseno_recursos", estimatedTime: 35, difficulty: "high", active: true },
+                { code: "T21", description: "Investigación aplicada", type: "project", project: "", estimatedTime: 60, difficulty: "very_high", active: true },
+                { code: "T24", description: "Evaluación de impacto", type: "normal", project: "evaluacion", estimatedTime: 30, difficulty: "high", active: true },
+                { code: "T25", description: "Gestión del conocimiento", type: "project", project: "", estimatedTime: 40, difficulty: "medium", active: true }
+            ],
+            
+            calendar: {
+                // Estructura: año -> mes -> asesor -> día -> valor
+                2026: {
+                    0: {}, // Enero
+                    1: {}, // Febrero
+                    2: {}, // Marzo
+                    3: {}, // Abril
+                    4: {}, // Mayo
+                    5: {}, // Junio
+                    6: {}, // Julio
+                    7: {}, // Agosto
+                    8: {}, // Septiembre
+                    9: {}, // Octubre
+                    10: {}, // Noviembre
+                    11: {}  // Diciembre
+                }
+            },
+            
+            notifications: [],
+            supportRequests: [],
+            settings: {
+                autoBackup: true,
+                backupInterval: 24, // horas
+                lastBackup: null,
+                notificationsEnabled: true,
+                emailNotifications: false,
+                theme: "light"
+            }
+        };
+
+        // Cargar datos desde localStorage o usar iniciales
+        function loadData() {
+            try {
+                const savedData = localStorage.getItem('ice_calendar_system');
+                if (savedData) {
+                    const parsed = JSON.parse(savedData);
+                    
+                    // Mezclar datos guardados con iniciales
+                    if (parsed.advisors) initialData.advisors = parsed.advisors;
+                    if (parsed.tasks) initialData.tasks = parsed.tasks;
+                    if (parsed.calendar) initialData.calendar = parsed.calendar;
+                    if (parsed.notifications) initialData.notifications = parsed.notifications;
+                    if (parsed.supportRequests) initialData.supportRequests = parsed.supportRequests;
+                    if (parsed.settings) initialData.settings = parsed.settings;
+                    
+                    console.log('Datos cargados desde localStorage');
+                }
+            } catch (error) {
+                console.error('Error al cargar datos:', error);
+                createBackup('error_recovery');
+            }
+            
+            // Actualizar estadísticas
+            updateStatistics();
+        }
+
+        // Guardar datos en localStorage
+        function saveData() {
+            try {
+                localStorage.setItem('ice_calendar_system', JSON.stringify(initialData));
+                console.log('Datos guardados en localStorage');
+                
+                // Crear backup automático
+                if (initialData.settings.autoBackup) {
+                    createBackup('auto');
+                }
+                
+                return true;
+            } catch (error) {
+                console.error('Error al guardar datos:', error);
+                showNotification('Error', 'No se pudieron guardar los datos', 'error');
+                return false;
+            }
+        }
+
+        // ============================================
+        // FUNCIONES PRINCIPALES DEL SISTEMA
+        // ============================================
+
+        // Mostrar/ocultar secciones
+        function showSection(sectionId) {
+            // Ocultar todas las secciones
+            document.querySelectorAll('.section-content').forEach(section => {
+                section.classList.add('d-none');
+            });
+            
+            // Mostrar la sección seleccionada
+            const section = document.getElementById(sectionId);
+            if (section) {
+                section.classList.remove('d-none');
+                section.classList.add('fade-in');
+                
+                // Cargar contenido específico de la sección
+                switch(sectionId) {
+                    case 'dashboard':
+                        loadDashboard();
+                        break;
+                    case 'calendar':
+                        loadCalendar();
+                        break;
+                    case 'advisors':
+                        loadAdvisors();
+                        break;
+                    case 'tasks':
+                        loadTasks();
+                        break;
+                    case 'reports':
+                        loadReports();
+                        break;
+                }
+            }
+        }
+
+        // ============================================
+        // DASHBOARD
+        // ============================================
+
+        function loadDashboard() {
+            updateStatistics();
+            loadCharts();
+            loadRecentAlerts();
+        }
+
+        function updateStatistics() {
+            // Actualizar contadores
+            document.getElementById('statAdvisors').textContent = initialData.advisors.length;
+            document.getElementById('statTasks').textContent = initialData.tasks.length;
+            document.getElementById('advisorCountBadge').textContent = initialData.advisors.length;
+            document.getElementById('taskCountBadge').textContent = initialData.tasks.length;
+            
+            // Calcular días de vacaciones
+            let vacationDays = 0;
+            if (initialData.calendar[currentYear] && initialData.calendar[currentYear][currentMonth]) {
+                const monthData = initialData.calendar[currentYear][currentMonth];
+                Object.values(monthData).forEach(advisorDays => {
+                    Object.values(advisorDays).forEach(value => {
+                        if (value === 'V') vacationDays++;
+                    });
+                });
+            }
+            document.getElementById('statVacations').textContent = vacationDays;
+            
+            // Solicitudes pendientes
+            const pendingRequests = initialData.supportRequests.filter(req => req.status === 'pending').length;
+            document.getElementById('statRequests').textContent = pendingRequests;
+        }
+
+        function loadCharts() {
             // Gráfico de distribución de tareas
-            const tasksCtx = document.getElementById('tasksChart').getContext('2d');
+            const tasksCtx = document.getElementById('chartTasksDistribution').getContext('2d');
             new Chart(tasksCtx, {
-                type: 'doughnut',
+                type: 'pie',
                 data: {
-                    labels: ['Karen', 'Moisés', 'Yolanda', 'Allan', 'Mariana', 'Daniela', 'Kevin', 'Leonardo'],
+                    labels: initialData.advisors.slice(0, 5).map(a => a.name.split(' ')[0]),
                     datasets: [{
-                        data: [12, 10, 8, 6, 9, 7, 11, 8],
+                        data: [12, 8, 6, 10, 7],
                         backgroundColor: [
-                            '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0',
-                            '#9966FF', '#FF9F40', '#C9CBCF', '#7CBB00'
+                            '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF'
                         ]
                     }]
                 },
@@ -497,27 +1184,35 @@
                     plugins: {
                         legend: {
                             position: 'bottom'
+                        },
+                        title: {
+                            display: true,
+                            text: 'Tareas por Asesor'
                         }
                     }
                 }
             });
 
-            // Gráfico de estadísticas mensuales
-            const statsCtx = document.getElementById('monthlyStats').getContext('2d');
-            new Chart(statsCtx, {
-                type: 'bar',
+            // Gráfico de actividad mensual
+            const activityCtx = document.getElementById('chartMonthlyActivity').getContext('2d');
+            new Chart(activityCtx, {
+                type: 'line',
                 data: {
                     labels: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun'],
                     datasets: [
                         {
-                            label: 'Tareas Asignadas',
+                            label: 'Tareas Completadas',
                             data: [65, 59, 80, 81, 56, 55],
-                            backgroundColor: '#36A2EB'
+                            borderColor: '#36A2EB',
+                            backgroundColor: 'rgba(54, 162, 235, 0.1)',
+                            fill: true
                         },
                         {
-                            label: 'Vacaciones',
+                            label: 'Días Vacaciones',
                             data: [28, 48, 40, 19, 86, 27],
-                            backgroundColor: '#4BC0C0'
+                            borderColor: '#4BC0C0',
+                            backgroundColor: 'rgba(75, 192, 192, 0.1)',
+                            fill: true
                         }
                     ]
                 },
@@ -527,130 +1222,1559 @@
                         y: {
                             beginAtZero: true
                         }
+                    },
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Actividad Mensual'
+                        }
                     }
                 }
             });
         }
 
-        // Funciones para modales
-        function openTaskModal() {
-            const modal = new bootstrap.Modal(document.getElementById('taskModal'));
-            modal.show();
-        }
-
-        function openSupportForm() {
-            const modal = new bootstrap.Modal(document.getElementById('supportModal'));
-            modal.show();
-        }
-
-        function saveTask() {
-            // Lógica para guardar tarea
-            alert('Tarea guardada exitosamente');
-            bootstrap.Modal.getInstance(document.getElementById('taskModal')).hide();
-        }
-
-        function submitSupportRequest() {
-            // Lógica para enviar solicitud de apoyo
-            alert('Solicitud de apoyo enviada. Recibirá notificación cuando sea revisada.');
-            bootstrap.Modal.getInstance(document.getElementById('supportModal')).hide();
+        function loadRecentAlerts() {
+            const container = document.getElementById('recentAlerts');
+            container.innerHTML = '';
             
-            // Enviar notificación por correo
-            sendEmailNotification();
-        }
-
-        function sendEmailNotification() {
-            // Integración con servicio de correo
-            console.log('Enviando notificación por correo...');
-            // Usar React-Email o servicio similar
-        }
-
-        // Inicializar cuando cargue la página
-        document.addEventListener('DOMContentLoaded', function() {
-            initializeCharts();
-            renderCalendar();
-            loadTasksTable();
-            loadSupportRequests();
-        });
-
-        // Funciones para cargar datos
-        function loadTasksTable() {
-            const table = document.getElementById('tasksTable');
-            let html = '';
+            // Últimas 5 notificaciones
+            const recentAlerts = initialData.notifications.slice(-5).reverse();
             
-            tasks.forEach(task => {
-                html += `
-                <tr>
-                    <td><span class="badge bg-primary">${task.code}</span></td>
-                    <td>${task.description}</td>
-                    <td>${task.assignedTo.join(', ')}</td>
-                    <td><span class="badge ${getStatusBadge(task.status)}">${task.status}</span></td>
-                    <td>
-                        <button class="btn btn-sm btn-outline-primary">Editar</button>
-                        <button class="btn btn-sm btn-outline-info">Ver detalles</button>
-                    </td>
-                </tr>
+            if (recentAlerts.length === 0) {
+                container.innerHTML = `
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i> No hay alertas recientes
+                    </div>
                 `;
-            });
+                return;
+            }
             
-            table.innerHTML = html;
+            recentAlerts.forEach(alert => {
+                const alertClass = getAlertClass(alert.type);
+                const timeAgo = getTimeAgo(alert.timestamp);
+                
+                const alertElement = document.createElement('a');
+                alertElement.href = '#';
+                alertElement.className = `list-group-item list-group-item-action ${alertClass}`;
+                alertElement.innerHTML = `
+                    <div class="d-flex w-100 justify-content-between">
+                        <h6 class="mb-1">${alert.title}</h6>
+                        <small>${timeAgo}</small>
+                    </div>
+                    <p class="mb-1">${alert.message}</p>
+                `;
+                
+                alertElement.onclick = (e) => {
+                    e.preventDefault();
+                    markNotificationAsRead(alert.id);
+                };
+                
+                container.appendChild(alertElement);
+            });
+        }
+
+        function getAlertClass(type) {
+            switch(type) {
+                case 'success': return 'list-group-item-success';
+                case 'warning': return 'list-group-item-warning';
+                case 'danger': return 'list-group-item-danger';
+                case 'info': return 'list-group-item-info';
+                default: return '';
+            }
+        }
+
+        function getTimeAgo(timestamp) {
+            const now = new Date();
+            const past = new Date(timestamp);
+            const diffMs = now - past;
+            const diffMins = Math.floor(diffMs / 60000);
+            const diffHours = Math.floor(diffMs / 3600000);
+            const diffDays = Math.floor(diffMs / 86400000);
+            
+            if (diffMins < 60) return `hace ${diffMins} min`;
+            if (diffHours < 24) return `hace ${diffHours} horas`;
+            if (diffDays < 7) return `hace ${diffDays} días`;
+            return past.toLocaleDateString();
+        }
+
+        function markAllAsRead() {
+            initialData.notifications.forEach(notification => {
+                notification.read = true;
+            });
+            saveData();
+            loadRecentAlerts();
+            showNotification('Éxito', 'Todas las alertas marcadas como leídas', 'success');
+        }
+
+        function markNotificationAsRead(id) {
+            const notification = initialData.notifications.find(n => n.id === id);
+            if (notification) {
+                notification.read = true;
+                saveData();
+                loadRecentAlerts();
+            }
+        }
+
+        // ============================================
+        // CALENDARIO
+        // ============================================
+
+        function loadCalendar() {
+            generateMonthTabs();
+            renderCalendar();
+        }
+
+        function generateMonthTabs() {
+            const months = [
+                'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+                'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+            ];
+            
+            const container = document.getElementById('monthTabs');
+            container.innerHTML = '';
+            
+            months.forEach((month, index) => {
+                const button = document.createElement('button');
+                button.className = `btn btn-outline-primary month-tab ${index === currentMonth ? 'active' : ''}`;
+                button.textContent = month;
+                button.onclick = () => {
+                    currentMonth = index;
+                    document.querySelectorAll('.month-tab').forEach(btn => btn.classList.remove('active'));
+                    button.classList.add('active');
+                    renderCalendar();
+                };
+                container.appendChild(button);
+            });
+        }
+
+        function renderCalendar() {
+            const monthNames = [
+                'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+                'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+            ];
+            
+            // Actualizar título
+            document.getElementById('currentMonthTitle').textContent = 
+                `${monthNames[currentMonth]} ${currentYear}`;
+            
+            // Calcular días en el mes
+            const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+            
+            // Generar encabezado
+            const header = document.getElementById('calendarHeader');
+            header.innerHTML = `
+                <tr>
+                    <th style="width: 200px;">Asesor</th>
+                    ${Array.from({length: daysInMonth}, (_, i) => 
+                        `<th class="text-center">${i + 1}<br><small>${getDayName(currentYear, currentMonth, i + 1)}</small></th>`
+                    ).join('')}
+                    <th class="text-center">Total</th>
+                </tr>
+            `;
+            
+            // Generar filas para cada asesor
+            const body = document.getElementById('calendarBody');
+            body.innerHTML = '';
+            
+            initialData.advisors.forEach(advisor => {
+                const row = document.createElement('tr');
+                let totalDays = 0;
+                
+                // Celda del nombre
+                const nameCell = document.createElement('td');
+                nameCell.className = 'advisor-name fw-bold';
+                nameCell.textContent = advisor.name;
+                row.appendChild(nameCell);
+                
+                // Celdas de días
+                for (let day = 1; day <= daysInMonth; day++) {
+                    const cell = document.createElement('td');
+                    cell.className = 'calendar-cell text-center p-0';
+                    
+                    // Obtener valor del calendario
+                    const value = getCalendarValue(advisor.id, day);
+                    if (value) {
+                        cell.classList.add(getCellClassByValue(value));
+                        cell.innerHTML = `<span class="task-code">${value}</span><small class="day-number">${day}</small>`;
+                        totalDays++;
+                    } else {
+                        cell.innerHTML = `<small class="day-number">${day}</small>`;
+                    }
+                    
+                    // Evento click para editar
+                    cell.onclick = () => editCell(advisor, day);
+                    row.appendChild(cell);
+                }
+                
+                // Celda de total
+                const totalCell = document.createElement('td');
+                totalCell.className = 'text-center fw-bold';
+                totalCell.textContent = totalDays;
+                row.appendChild(totalCell);
+                
+                body.appendChild(row);
+            });
+        }
+
+        function getDayName(year, month, day) {
+            const date = new Date(year, month, day);
+            const days = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+            return days[date.getDay()];
+        }
+
+        function getCalendarValue(advisorId, day) {
+            if (!initialData.calendar[currentYear] || 
+                !initialData.calendar[currentYear][currentMonth] ||
+                !initialData.calendar[currentYear][currentMonth][advisorId]) {
+                return null;
+            }
+            return initialData.calendar[currentYear][currentMonth][advisorId][day] || null;
+        }
+
+        function getCellClassByValue(value) {
+            if (value === 'V') return 'cell-vacation';
+            if (value === 'P') return 'cell-permission';
+            if (value === 'I') return 'cell-incapacity';
+            if (value.startsWith('T')) return 'cell-task';
+            return '';
+        }
+
+        function editCell(advisor, day) {
+            currentCellData = {
+                advisorId: advisor.id,
+                advisorName: advisor.name,
+                day: day,
+                currentValue: getCalendarValue(advisor.id, day)
+            };
+            
+            // Mostrar modal de edición
+            document.getElementById('editCellAdvisor').value = advisor.name;
+            document.getElementById('editCellDate').value = `${day} de ${getMonthName(currentMonth)} ${currentYear}`;
+            document.getElementById('editCellCurrent').value = currentCellData.currentValue || '(Vacío)';
+            
+            // Llenar opciones de tareas
+            const select = document.getElementById('editCellNewValue');
+            select.innerHTML = `
+                <option value="">-- Seleccionar --</option>
+                <optgroup label="Ausencias">
+                    <option value="V">V - Vacaciones</option>
+                    <option value="P">P - Permisos</option>
+                    <option value="I">I - Incapacidad</option>
+                </optgroup>
+                <optgroup label="Tareas">
+                    ${initialData.tasks.filter(task => task.active).map(task => 
+                        `<option value="${task.code}">${task.code} - ${task.description}</option>`
+                    ).join('')}
+                </optgroup>
+            `;
+            
+            if (currentCellData.currentValue) {
+                select.value = currentCellData.currentValue;
+            }
+            
+            // Mostrar modal
+            const modal = new bootstrap.Modal(document.getElementById('editCellModal'));
+            modal.show();
+        }
+
+        function getMonthName(monthIndex) {
+            const months = [
+                'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+                'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+            ];
+            return months[monthIndex];
+        }
+
+        function saveCellEdit() {
+            const newValue = document.getElementById('editCellNewValue').value;
+            const notes = document.getElementById('editCellNotes').value;
+            
+            if (!currentCellData) return;
+            
+            // Inicializar estructura si no existe
+            if (!initialData.calendar[currentYear]) {
+                initialData.calendar[currentYear] = {};
+            }
+            if (!initialData.calendar[currentYear][currentMonth]) {
+                initialData.calendar[currentYear][currentMonth] = {};
+            }
+            if (!initialData.calendar[currentYear][currentMonth][currentCellData.advisorId]) {
+                initialData.calendar[currentYear][currentMonth][currentCellData.advisorId] = {};
+            }
+            
+            // Guardar valor
+            if (newValue) {
+                initialData.calendar[currentYear][currentMonth][currentCellData.advisorId][currentCellData.day] = newValue;
+                
+                // Registrar notificación
+                addNotification(
+                    'Calendario Actualizado',
+                    `${currentCellData.advisorName} - Día ${currentCellData.day}: ${getTaskDescription(newValue)}`,
+                    'info'
+                );
+                
+                if (notes) {
+                    console.log(`Notas para ${currentCellData.advisorName} día ${currentCellData.day}: ${notes}`);
+                }
+            } else {
+                // Eliminar valor si se seleccionó vacío
+                delete initialData.calendar[currentYear][currentMonth][currentCellData.advisorId][currentCellData.day];
+            }
+            
+            saveData();
+            renderCalendar();
+            updateStatistics();
+            
+            // Cerrar modal
+            bootstrap.Modal.getInstance(document.getElementById('editCellModal')).hide();
+            
+            showNotification('Éxito', 'Cambios guardados correctamente', 'success');
+        }
+
+        function clearCellAssignment() {
+            if (confirm('¿Está seguro de que desea limpiar esta asignación?')) {
+                document.getElementById('editCellNewValue').value = '';
+            }
+        }
+
+        function getTaskDescription(code) {
+            if (code === 'V') return 'Vacaciones';
+            if (code === 'P') return 'Permisos';
+            if (code === 'I') return 'Incapacidad';
+            
+            const task = initialData.tasks.find(t => t.code === code);
+            return task ? task.description : code;
+        }
+
+        function changeYear() {
+            const select = document.getElementById('yearSelect');
+            currentYear = parseInt(select.value);
+            renderCalendar();
+        }
+
+        function previousMonth() {
+            if (currentMonth === 0) {
+                currentMonth = 11;
+                currentYear--;
+            } else {
+                currentMonth--;
+            }
+            updateMonthTabs();
+            renderCalendar();
+        }
+
+        function nextMonth() {
+            if (currentMonth === 11) {
+                currentMonth = 0;
+                currentYear++;
+            } else {
+                currentMonth++;
+            }
+            updateMonthTabs();
+            renderCalendar();
+        }
+
+        function updateMonthTabs() {
+            document.querySelectorAll('.month-tab').forEach((tab, index) => {
+                tab.classList.toggle('active', index === currentMonth);
+            });
+        }
+
+        function exportCalendarToExcel() {
+            try {
+                // Crear hoja de trabajo
+                const wsData = [];
+                
+                // Encabezado
+                const monthName = getMonthName(currentMonth);
+                wsData.push([`Calendario de ${monthName} ${currentYear}`]);
+                wsData.push([]);
+                
+                // Encabezado de columnas
+                const header = ['Asesor'];
+                const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+                for (let i = 1; i <= daysInMonth; i++) {
+                    header.push(i.toString());
+                }
+                header.push('Total Días');
+                wsData.push(header);
+                
+                // Datos
+                initialData.advisors.forEach(advisor => {
+                    const row = [advisor.name];
+                    let totalDays = 0;
+                    
+                    for (let day = 1; day <= daysInMonth; day++) {
+                        const value = getCalendarValue(advisor.id, day);
+                        row.push(value || '');
+                        if (value) totalDays++;
+                    }
+                    
+                    row.push(totalDays);
+                    wsData.push(row);
+                });
+                
+                // Crear libro de Excel
+                const ws = XLSX.utils.aoa_to_sheet(wsData);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, monthName);
+                
+                // Descargar
+                const fileName = `Calendario_${monthName}_${currentYear}.xlsx`;
+                XLSX.writeFile(wb, fileName);
+                
+                showNotification('Éxito', `Calendario exportado a ${fileName}`, 'success');
+            } catch (error) {
+                console.error('Error al exportar:', error);
+                showNotification('Error', 'No se pudo exportar el calendario', 'error');
+            }
+        }
+
+        function printCalendar() {
+            window.print();
+        }
+
+        // ============================================
+        // GESTIÓN DE ASESORES
+        // ============================================
+
+        function loadAdvisors() {
+            const table = document.getElementById('advisorsTable');
+            table.innerHTML = '';
+            
+            initialData.advisors.forEach((advisor, index) => {
+                // Calcular tareas asignadas este mes
+                const assignedTasks = getAssignedTasksCount(advisor.id);
+                
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td>
+                        <strong>${advisor.name}</strong><br>
+                        <small class="text-muted">${advisor.email}</small>
+                    </td>
+                    <td>${advisor.email}</td>
+                    <td>
+                        <span class="badge bg-primary">${assignedTasks} tareas</span><br>
+                        <small>este mes</small>
+                    </td>
+                    <td>
+                        <span class="badge ${getStatusBadge(advisor.status)}">
+                            ${getStatusText(advisor.status)}
+                        </span>
+                    </td>
+                    <td>
+                        <div class="btn-group btn-group-sm">
+                            <button class="btn btn-outline-primary" onclick="showAdvisorModal('edit', ${advisor.id})">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                            <button class="btn btn-outline-danger" onclick="deleteAdvisorPrompt(${advisor.id})">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                `;
+                table.appendChild(row);
+            });
+        }
+
+        function getAssignedTasksCount(advisorId) {
+            if (!initialData.calendar[currentYear] || !initialData.calendar[currentYear][currentMonth]) {
+                return 0;
+            }
+            
+            const monthData = initialData.calendar[currentYear][currentMonth][advisorId];
+            if (!monthData) return 0;
+            
+            // Contar solo tareas (códigos que empiezan con T)
+            return Object.values(monthData).filter(value => 
+                value && value.startsWith('T')
+            ).length;
         }
 
         function getStatusBadge(status) {
             switch(status) {
-                case 'Completado': return 'bg-success';
-                case 'En progreso': return 'bg-warning';
-                case 'Pendiente': return 'bg-secondary';
+                case 'active': return 'bg-success';
+                case 'inactive': return 'bg-secondary';
+                case 'vacation': return 'bg-warning';
+                case 'license': return 'bg-info';
                 default: return 'bg-light text-dark';
             }
         }
 
-        function renderCalendar() {
-            // Implementar calendario interactivo
-            // Similar a tu vista de Excel pero interactiva
+        function getStatusText(status) {
+            switch(status) {
+                case 'active': return 'Activo';
+                case 'inactive': return 'Inactivo';
+                case 'vacation': return 'Vacaciones';
+                case 'license': return 'Licencia';
+                default: return status;
+            }
         }
 
-        function loadSupportRequests() {
-            // Cargar solicitudes de apoyo pendientes
-        }
-
-        // WebSocket para notificaciones en tiempo real
-        function setupWebSocket() {
-            const ws = new WebSocket('wss://tuservidor.com/ws');
+        function showAdvisorModal(action, advisorId = null) {
+            const modal = new bootstrap.Modal(document.getElementById('advisorModal'));
+            const form = document.getElementById('advisorForm');
+            const deleteBtn = document.getElementById('advisorDeleteBtn');
             
-            ws.onmessage = function(event) {
-                const data = JSON.parse(event.data);
-                
-                if (data.type === 'NEW_SUPPORT_REQUEST') {
-                    showNotification('Nueva solicitud de apoyo', `${data.user} necesita ayuda con ${data.task}`);
+            if (action === 'new') {
+                document.getElementById('advisorModalTitle').textContent = 'Nuevo Asesor';
+                form.reset();
+                document.getElementById('advisorId').value = '';
+                document.getElementById('advisorStatus').value = 'active';
+                document.getElementById('advisorReceiveNotifications').checked = true;
+                deleteBtn.style.display = 'none';
+                currentAdvisorId = null;
+            } else if (action === 'edit' && advisorId) {
+                document.getElementById('advisorModalTitle').textContent = 'Editar Asesor';
+                const advisor = initialData.advisors.find(a => a.id === advisorId);
+                if (advisor) {
+                    document.getElementById('advisorId').value = advisor.id;
+                    document.getElementById('advisorName').value = advisor.name;
+                    document.getElementById('advisorEmail').value = advisor.email;
+                    document.getElementById('advisorPhone').value = advisor.phone || '';
+                    document.getElementById('advisorSpecialty').value = advisor.specialty || '';
+                    document.getElementById('advisorStatus').value = advisor.status;
+                    document.getElementById('advisorReceiveNotifications').checked = advisor.notifications || true;
+                    deleteBtn.style.display = 'block';
+                    currentAdvisorId = advisorId;
                 }
-                
-                if (data.type === 'TASK_UPDATE') {
-                    showNotification('Tarea actualizada', `La tarea ${data.task} cambió de estado`);
-                }
-            };
-        }
-
-        function showNotification(title, message) {
-            // Mostrar notificación del sistema
-            if (Notification.permission === 'granted') {
-                new Notification(title, { body: message });
             }
             
-            // También mostrar en la interfaz
-            const alertDiv = document.createElement('div');
-            alertDiv.className = 'alert alert-info alert-dismissible fade show';
-            alertDiv.innerHTML = `
-                <strong>${title}</strong> ${message}
+            modal.show();
+        }
+
+        function saveAdvisor() {
+            const form = document.getElementById('advisorForm');
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
+            
+            const id = document.getElementById('advisorId').value;
+            const name = document.getElementById('advisorName').value.trim();
+            const email = document.getElementById('advisorEmail').value.trim();
+            const phone = document.getElementById('advisorPhone').value.trim();
+            const specialty = document.getElementById('advisorSpecialty').value;
+            const status = document.getElementById('advisorStatus').value;
+            const notifications = document.getElementById('advisorReceiveNotifications').checked;
+            
+            if (id) {
+                // Editar asesor existente
+                const index = initialData.advisors.findIndex(a => a.id === parseInt(id));
+                if (index !== -1) {
+                    initialData.advisors[index] = {
+                        ...initialData.advisors[index],
+                        name,
+                        email,
+                        phone,
+                        specialty,
+                        status,
+                        notifications,
+                        updated: new Date().toISOString()
+                    };
+                    
+                    addNotification(
+                        'Asesor Actualizado',
+                        `${name} ha sido actualizado en el sistema`,
+                        'info'
+                    );
+                }
+            } else {
+                // Nuevo asesor
+                const newId = Math.max(...initialData.advisors.map(a => a.id), 0) + 1;
+                initialData.advisors.push({
+                    id: newId,
+                    name,
+                    email,
+                    phone,
+                    specialty,
+                    status,
+                    notifications,
+                    created: new Date().toISOString()
+                });
+                
+                addNotification(
+                    'Nuevo Asesor',
+                    `${name} ha sido agregado al equipo`,
+                    'success'
+                );
+            }
+            
+            saveData();
+            loadAdvisors();
+            updateStatistics();
+            
+            bootstrap.Modal.getInstance(document.getElementById('advisorModal')).hide();
+            showNotification('Éxito', 'Asesor guardado correctamente', 'success');
+        }
+
+        function deleteAdvisorPrompt(advisorId) {
+            const advisor = initialData.advisors.find(a => a.id === advisorId);
+            if (!advisor) return;
+            
+            if (confirm(`¿Está seguro de que desea eliminar a ${advisor.name}?\n\nEsta acción no se puede deshacer.`)) {
+                deleteAdvisor(advisorId);
+            }
+        }
+
+        function deleteAdvisor() {
+            if (!currentAdvisorId) return;
+            
+            const index = initialData.advisors.findIndex(a => a.id === currentAdvisorId);
+            if (index !== -1) {
+                const advisorName = initialData.advisors[index].name;
+                initialData.advisors.splice(index, 1);
+                
+                // También eliminar del calendario
+                Object.keys(initialData.calendar).forEach(year => {
+                    Object.keys(initialData.calendar[year]).forEach(month => {
+                        if (initialData.calendar[year][month][currentAdvisorId]) {
+                            delete initialData.calendar[year][month][currentAdvisorId];
+                        }
+                    });
+                });
+                
+                saveData();
+                loadAdvisors();
+                updateStatistics();
+                
+                bootstrap.Modal.getInstance(document.getElementById('advisorModal')).hide();
+                
+                addNotification(
+                    'Asesor Eliminado',
+                    `${advisorName} ha sido eliminado del sistema`,
+                    'warning'
+                );
+                
+                showNotification('Éxito', 'Asesor eliminado correctamente', 'success');
+            }
+        }
+
+        // ============================================
+        // GESTIÓN DE TAREAS
+        // ============================================
+
+        function loadTasks() {
+            const table = document.getElementById('tasksTable');
+            table.innerHTML = '';
+            
+            initialData.tasks.forEach((task, index) => {
+                // Contar asignaciones este mes
+                const assignments = countTaskAssignments(task.code);
+                
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>
+                        <span class="badge ${getTaskBadgeClass(task.type)}">${task.code}</span>
+                    </td>
+                    <td>${task.description}</td>
+                    <td>${getTaskTypeText(task.type)}</td>
+                    <td>${getProjectName(task.project)}</td>
+                    <td>
+                        <span class="badge ${assignments > 0 ? 'bg-primary' : 'bg-secondary'}">
+                            ${assignments} asignaciones
+                        </span>
+                    </td>
+                    <td>
+                        <div class="btn-group btn-group-sm">
+                            <button class="btn btn-outline-primary" onclick="showTaskModal('edit', '${task.code}')">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                            <button class="btn btn-outline-danger" onclick="deleteTaskPrompt('${task.code}')">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                `;
+                table.appendChild(row);
+            });
+        }
+
+        function countTaskAssignments(taskCode) {
+            if (!initialData.calendar[currentYear] || !initialData.calendar[currentYear][currentMonth]) {
+                return 0;
+            }
+            
+            let count = 0;
+            const monthData = initialData.calendar[currentYear][currentMonth];
+            
+            Object.values(monthData).forEach(advisorDays => {
+                Object.values(advisorDays).forEach(value => {
+                    if (value === taskCode) count++;
+                });
+            });
+            
+            return count;
+        }
+
+        function getTaskBadgeClass(type) {
+            switch(type) {
+                case 'urgent': return 'bg-danger';
+                case 'project': return 'bg-success';
+                case 'recurrent': return 'bg-info';
+                default: return 'bg-secondary';
+            }
+        }
+
+        function getTaskTypeText(type) {
+            switch(type) {
+                case 'normal': return 'Normal';
+                case 'urgent': return 'Urgente';
+                case 'recurrent': return 'Recurrente';
+                case 'project': return 'Proyecto';
+                default: return type;
+            }
+        }
+
+        function getProjectName(projectCode) {
+            switch(projectCode) {
+                case 'diseno_recursos': return 'Diseño Recursos';
+                case 'actualizacion_modulos': return 'Actualización Módulos';
+                case 'actualizacion_docente': return 'Actualización Docente';
+                case 'guias_autonomo': return 'Guías Autónomo';
+                case 'guias_epja': return 'Guías EPJA';
+                case 'evaluacion': return 'Evaluación';
+                default: return 'General';
+            }
+        }
+
+        function showTaskModal(action, taskCode = null) {
+            const modal = new bootstrap.Modal(document.getElementById('taskModal'));
+            const form = document.getElementById('taskForm');
+            const deleteBtn = document.getElementById('taskDeleteBtn');
+            
+            if (action === 'new') {
+                document.getElementById('taskModalTitle').textContent = 'Nueva Tarea';
+                form.reset();
+                document.getElementById('taskId').value = '';
+                document.getElementById('taskType').value = 'normal';
+                document.getElementById('taskActive').checked = true;
+                deleteBtn.style.display = 'none';
+                currentTaskId = null;
+            } else if (action === 'edit' && taskCode) {
+                document.getElementById('taskModalTitle').textContent = 'Editar Tarea';
+                const task = initialData.tasks.find(t => t.code === taskCode);
+                if (task) {
+                    document.getElementById('taskId').value = task.code;
+                    document.getElementById('taskCode').value = task.code;
+                    document.getElementById('taskDescription').value = task.description;
+                    document.getElementById('taskType').value = task.type;
+                    document.getElementById('taskProject').value = task.project || '';
+                    document.getElementById('taskEstimatedTime').value = task.estimatedTime || '';
+                    document.getElementById('taskDifficulty').value = task.difficulty || 'medium';
+                    document.getElementById('taskActive').checked = task.active !== false;
+                    deleteBtn.style.display = 'block';
+                    currentTaskId = taskCode;
+                }
+            }
+            
+            modal.show();
+        }
+
+        function saveTask() {
+            const form = document.getElementById('taskForm');
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
+            
+            const oldCode = document.getElementById('taskId').value;
+            const code = document.getElementById('taskCode').value.trim().toUpperCase();
+            const description = document.getElementById('taskDescription').value.trim();
+            const type = document.getElementById('taskType').value;
+            const project = document.getElementById('taskProject').value;
+            const estimatedTime = parseInt(document.getElementById('taskEstimatedTime').value) || 0;
+            const difficulty = document.getElementById('taskDifficulty').value;
+            const active = document.getElementById('taskActive').checked;
+            
+            // Validar código
+            if (!code.match(/^[A-Z]\d*$/)) {
+                alert('El código debe empezar con una letra seguida de números (ej: T1, T25)');
+                return;
+            }
+            
+            if (oldCode) {
+                // Editar tarea existente
+                const index = initialData.tasks.findIndex(t => t.code === oldCode);
+                if (index !== -1) {
+                    // Si cambió el código, actualizar referencias en el calendario
+                    if (oldCode !== code) {
+                        updateTaskCodeInCalendar(oldCode, code);
+                    }
+                    
+                    initialData.tasks[index] = {
+                        ...initialData.tasks[index],
+                        code,
+                        description,
+                        type,
+                        project,
+                        estimatedTime,
+                        difficulty,
+                        active
+                    };
+                    
+                    addNotification(
+                        'Tarea Actualizada',
+                        `Tarea ${code} ha sido actualizada`,
+                        'info'
+                    );
+                }
+            } else {
+                // Verificar que no exista el código
+                if (initialData.tasks.some(t => t.code === code)) {
+                    alert(`Ya existe una tarea con el código ${code}`);
+                    return;
+                }
+                
+                // Nueva tarea
+                initialData.tasks.push({
+                    code,
+                    description,
+                    type,
+                    project,
+                    estimatedTime,
+                    difficulty,
+                    active
+                });
+                
+                addNotification(
+                    'Nueva Tarea',
+                    `Tarea ${code} ha sido agregada al catálogo`,
+                    'success'
+                );
+            }
+            
+            saveData();
+            loadTasks();
+            updateStatistics();
+            
+            bootstrap.Modal.getInstance(document.getElementById('taskModal')).hide();
+            showNotification('Éxito', 'Tarea guardada correctamente', 'success');
+        }
+
+        function updateTaskCodeInCalendar(oldCode, newCode) {
+            // Actualizar en todos los años y meses
+            Object.keys(initialData.calendar).forEach(year => {
+                Object.keys(initialData.calendar[year]).forEach(month => {
+                    Object.keys(initialData.calendar[year][month]).forEach(advisorId => {
+                        const advisorDays = initialData.calendar[year][month][advisorId];
+                        Object.keys(advisorDays).forEach(day => {
+                            if (advisorDays[day] === oldCode) {
+                                advisorDays[day] = newCode;
+                            }
+                        });
+                    });
+                });
+            });
+        }
+
+        function deleteTaskPrompt(taskCode) {
+            const task = initialData.tasks.find(t => t.code === taskCode);
+            if (!task) return;
+            
+            const assignments = countTaskAssignments(taskCode);
+            let message = `¿Está seguro de que desea eliminar la tarea ${taskCode}?\n\n`;
+            
+            if (assignments > 0) {
+                message += `ADVERTENCIA: Esta tarea tiene ${assignments} asignaciones activas.\n`;
+                message += `Si la elimina, esas asignaciones quedarán vacías.\n\n`;
+            }
+            
+            message += 'Esta acción no se puede deshacer.';
+            
+            if (confirm(message)) {
+                deleteTask(taskCode);
+            }
+        }
+
+        function deleteTask(taskCode = null) {
+            const codeToDelete = taskCode || currentTaskId;
+            if (!codeToDelete) return;
+            
+            const index = initialData.tasks.findIndex(t => t.code === codeToDelete);
+            if (index !== -1) {
+                const taskDescription = initialData.tasks[index].description;
+                
+                // Eliminar del calendario
+                removeTaskFromCalendar(codeToDelete);
+                
+                // Eliminar de la lista
+                initialData.tasks.splice(index, 1);
+                
+                saveData();
+                loadTasks();
+                updateStatistics();
+                
+                if (taskCode) {
+                    // Viene del prompt
+                    addNotification(
+                        'Tarea Eliminada',
+                        `Tarea ${codeToDelete} ha sido eliminada del sistema`,
+                        'warning'
+                    );
+                    showNotification('Éxito', 'Tarea eliminada correctamente', 'success');
+                } else {
+                    // Viene del modal
+                    bootstrap.Modal.getInstance(document.getElementById('taskModal')).hide();
+                    addNotification(
+                        'Tarea Eliminada',
+                        `Tarea ${codeToDelete} (${taskDescription}) ha sido eliminada`,
+                        'warning'
+                    );
+                    showNotification('Éxito', 'Tarea eliminada correctamente', 'success');
+                }
+            }
+        }
+
+        function removeTaskFromCalendar(taskCode) {
+            Object.keys(initialData.calendar).forEach(year => {
+                Object.keys(initialData.calendar[year]).forEach(month => {
+                    Object.keys(initialData.calendar[year][month]).forEach(advisorId => {
+                        const advisorDays = initialData.calendar[year][month][advisorId];
+                        Object.keys(advisorDays).forEach(day => {
+                            if (advisorDays[day] === taskCode) {
+                                delete advisorDays[day];
+                            }
+                        });
+                    });
+                });
+            });
+        }
+
+        // ============================================
+        // REPORTES
+        // ============================================
+
+        function loadReports() {
+            // Gráfico de productividad
+            const productivityCtx = document.getElementById('chartProductivity').getContext('2d');
+            new Chart(productivityCtx, {
+                type: 'bar',
+                data: {
+                    labels: initialData.advisors.slice(0, 6).map(a => a.name.split(' ')[0]),
+                    datasets: [{
+                        label: 'Tareas Completadas',
+                        data: [12, 8, 10, 6, 9, 7],
+                        backgroundColor: '#36A2EB'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Número de Tareas'
+                            }
+                        }
+                    },
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Productividad por Asesor'
+                        }
+                    }
+                }
+            });
+
+            // Gráfico de ausencias
+            const absencesCtx = document.getElementById('chartAbsences').getContext('2d');
+            new Chart(absencesCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Vacaciones', 'Permisos', 'Incapacidades'],
+                    datasets: [{
+                        data: [12, 5, 3],
+                        backgroundColor: ['#4BC0C0', '#FFCE56', '#FF6384']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Distribución de Ausencias'
+                        }
+                    }
+                }
+            });
+        }
+
+        function generateProductivityReport() {
+            showNotification('Información', 'Generando reporte de productividad...', 'info');
+            // Implementar generación de reporte
+        }
+
+        function generateAbsenceReport() {
+            showNotification('Información', 'Generando reporte de ausencias...', 'info');
+            // Implementar generación de reporte
+        }
+
+        function generateMonthlyReport() {
+            const now = new Date();
+            const month = now.getMonth();
+            const year = now.getFullYear();
+            
+            showNotification('Información', `Generando reporte mensual de ${getMonthName(month)} ${year}...`, 'info');
+            // Implementar generación de reporte
+        }
+
+        function generateQuarterlyReport() {
+            showNotification('Información', 'Generando reporte trimestral...', 'info');
+            // Implementar generación de reporte
+        }
+
+        function generateAnnualReport() {
+            showNotification('Información', `Generando reporte anual ${currentYear}...`, 'info');
+            // Implementar generación de reporte
+        }
+
+        function generateCustomReport() {
+            const startDate = document.getElementById('reportStartDate').value;
+            const endDate = document.getElementById('reportEndDate').value;
+            const format = document.getElementById('reportFormat').value;
+            
+            if (!startDate || !endDate) {
+                showNotification('Error', 'Seleccione fechas de inicio y fin', 'error');
+                return;
+            }
+            
+            showNotification('Información', `Generando reporte personalizado en formato ${format.toUpperCase()}...`, 'info');
+            // Implementar generación de reporte personalizado
+        }
+
+        // ============================================
+        // NOTIFICACIONES Y UTILIDADES
+        // ============================================
+
+        function addNotification(title, message, type = 'info') {
+            const notification = {
+                id: Date.now(),
+                title,
+                message,
+                type,
+                timestamp: new Date().toISOString(),
+                read: false
+            };
+            
+            initialData.notifications.push(notification);
+            
+            // Mostrar notificación en tiempo real
+            showNotification(title, message, type);
+            
+            // Guardar datos
+            saveData();
+            
+            return notification.id;
+        }
+
+        function showNotification(title, message, type = 'info') {
+            // Crear elemento de notificación
+            const notification = document.createElement('div');
+            notification.className = `alert alert-${type} alert-dismissible fade show`;
+            notification.style.position = 'fixed';
+            notification.style.top = '20px';
+            notification.style.right = '20px';
+            notification.style.zIndex = '9999';
+            notification.style.minWidth = '300px';
+            notification.innerHTML = `
+                <strong>${title}</strong><br>
+                ${message}
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             `;
             
-            document.querySelector('.container-fluid').insertBefore(alertDiv, document.querySelector('.row'));
+            document.body.appendChild(notification);
+            
+            // Auto-remover después de 5 segundos
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.remove();
+                }
+            }, 5000);
+            
+            // También mostrar en consola
+            console.log(`[${type.toUpperCase()}] ${title}: ${message}`);
         }
 
-        // Solicitar permiso para notificaciones
-        if ('Notification' in window) {
-            Notification.requestPermission();
+        function submitSupportRequest() {
+            const taskCode = document.getElementById('supportTask').value;
+            const description = document.getElementById('supportDescription').value.trim();
+            const urgency = document.getElementById('supportUrgency').value;
+            
+            if (!taskCode || !description) {
+                showNotification('Error', 'Complete todos los campos requeridos', 'error');
+                return;
+            }
+            
+            const request = {
+                id: Date.now(),
+                taskCode,
+                description,
+                urgency,
+                status: 'pending',
+                timestamp: new Date().toISOString(),
+                advisor: 'Usuario Actual' // En una versión real, sería el usuario logueado
+            };
+            
+            initialData.supportRequests.push(request);
+            saveData();
+            updateStatistics();
+            
+            // Cerrar modal
+            bootstrap.Modal.getInstance(document.getElementById('supportModal')).hide();
+            
+            // Notificación
+            addNotification(
+                'Solicitud de Apoyo Enviada',
+                `Se ha solicitado apoyo para la tarea ${taskCode}`,
+                'warning'
+            );
+            
+            showNotification('Éxito', 'Solicitud de apoyo enviada correctamente', 'success');
+            
+            // En una versión real, aquí se enviaría un correo
+            console.log(`Solicitud de apoyo enviada: ${taskCode} - ${urgency} - ${description}`);
         }
-    </script>
+
+        function exportBackup() {
+            try {
+                const dataStr = JSON.stringify(initialData, null, 2);
+                const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+                
+                const exportFileDefaultName = `backup_ice_calendar_${new Date().toISOString().split('T')[0]}.json`;
+                
+                const linkElement = document.createElement('a');
+                linkElement.setAttribute('href', dataUri);
+                linkElement.setAttribute('download', exportFileDefaultName);
+                linkElement.click();
+                
+                addNotification(
+                    'Backup Exportado',
+                    `Respaldo guardado como ${exportFileDefaultName}`,
+                    'success'
+                );
+            } catch (error) {
+                console.error('Error al exportar backup:', error);
+                showNotification('Error', 'No se pudo exportar el respaldo', 'error');
+            }
+        }
+
+        function importBackup() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json';
+            
+            input.onchange = e => {
+                const file = e.target.files[0];
+                if (!file) return;
+                
+                const reader = new FileReader();
+                reader.onload = event => {
+                    try {
+                        const importedData = JSON.parse(event.target.result);
+                        
+                        // Validar estructura básica
+                        if (!importedData.advisors || !importedData.tasks || !importedData.calendar) {
+                            throw new Error('Formato de archivo inválido');
+                        }
+                        
+                        // Preguntar confirmación
+                        if (confirm(`¿Importar respaldo con ${importedData.advisors.length} asesores y ${importedData.tasks.length} tareas?\n\nSe sobrescribirán los datos actuales.`)) {
+                            // Actualizar datos
+                            initialData.advisors = importedData.advisors;
+                            initialData.tasks = importedData.tasks;
+                            initialData.calendar = importedData.calendar;
+                            initialData.notifications = importedData.notifications || [];
+                            initialData.supportRequests = importedData.supportRequests || [];
+                            
+                            saveData();
+                            
+                            // Recargar vistas
+                            loadAdvisors();
+                            loadTasks();
+                            updateStatistics();
+                            renderCalendar();
+                            
+                            addNotification(
+                                'Backup Importado',
+                                'Datos restaurados correctamente desde el respaldo',
+                                'success'
+                            );
+                            
+                            showNotification('Éxito', 'Respaldo importado correctamente', 'success');
+                        }
+                    } catch (error) {
+                        console.error('Error al importar backup:', error);
+                        showNotification('Error', 'El archivo de respaldo es inválido o está corrupto', 'error');
+                    }
+                };
+                
+                reader.readAsText(file);
+            };
+            
+            input.click();
+        }
+
+        function createBackup(type = 'manual') {
+            // En una versión real, aquí se guardaría en la nube
+            console.log(`Backup ${type} creado:`, new Date().toISOString());
+            initialData.settings.lastBackup = new Date().toISOString();
+        }
+
+        function clearCache() {
+            if (confirm('¿Está seguro de que desea limpiar toda la cache?\n\nEsto eliminará TODOS los datos locales y restaurará los valores iniciales.\n\nSe recomienda exportar un respaldo primero.')) {
+                localStorage.clear();
+                location.reload();
+            }
+        }
+
+                            // Funcionalidad PWA básica
+                    if ('serviceWorker' in navigator) {
+                        navigator.serviceWorker.register('/sw.js')
+                            .then(() => console.log('Service Worker registrado'))
+                            .catch(err => console.log('Error SW:', err));
+                    }
+                    
+                    showNotification('PWA', 'Use el menú de su navegador para "Instalar aplicación" o "Agregar a pantalla de inicio"', 'info');
+                }
+
+                // ============================================
+                // INICIALIZACIÓN DEL SISTEMA
+                // ============================================
+
+                // Al cargar la página
+                document.addEventListener('DOMContentLoaded', function() {
+                    // Cargar datos
+                    loadData();
+                    
+                    // Mostrar dashboard inicial
+                    showSection('dashboard');
+                    
+                    // Actualizar fecha de última actualización
+                    document.getElementById('lastUpdate').textContent = 
+                        new Date().toLocaleDateString('es-CR');
+                    
+                    // Configurar Service Worker para PWA
+                    if ('serviceWorker' in navigator) {
+                        window.addEventListener('load', () => {
+                            navigator.serviceWorker.register('/sw.js')
+                                .then(registration => {
+                                    console.log('ServiceWorker registrado:', registration);
+                                })
+                                .catch(error => {
+                                    console.log('ServiceWorker registro fallido:', error);
+                                });
+                        });
+                    }
+                    
+                    // Configurar backup automático cada 24 horas
+                    if (initialData.settings.autoBackup) {
+                        setInterval(() => {
+                            createBackup('auto');
+                        }, 24 * 60 * 60 * 1000); // 24 horas
+                    }
+                    
+                    // Mostrar notificación de bienvenida
+                    setTimeout(() => {
+                        if (initialData.notifications.length === 0) {
+                            addNotification(
+                                '¡Bienvenido!',
+                                'Sistema de Gestión Curricular ICE cargado correctamente',
+                                'success'
+                            );
+                        }
+                    }, 1000);
+                    
+                    // Verificar si hay solicitudes de apoyo pendientes
+                    const pendingRequests = initialData.supportRequests.filter(req => req.status === 'pending').length;
+                    if (pendingRequests > 0) {
+                        setTimeout(() => {
+                            addNotification(
+                                'Solicitudes Pendientes',
+                                `Tiene ${pendingRequests} solicitud(es) de apoyo pendientes`,
+                                'warning'
+                            );
+                        }, 2000);
+                    }
+                });
+
+                // ============================================
+                // FUNCIONES AUXILIARES
+                // ============================================
+
+                // Detectar si la app está instalada como PWA
+                function isRunningAsPWA() {
+                    return window.matchMedia('(display-mode: standalone)').matches || 
+                           window.navigator.standalone === true;
+                }
+
+                // Función para copiar al portapapeles
+                function copyToClipboard(text) {
+                    navigator.clipboard.writeText(text)
+                        .then(() => showNotification('Copiado', 'Texto copiado al portapapeles', 'success'))
+                        .catch(err => console.error('Error al copiar:', err));
+                }
+
+                // Formatear fecha
+                function formatDate(date) {
+                    return new Date(date).toLocaleDateString('es-CR', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                    });
+                }
+
+                // Generar ID único
+                function generateId() {
+                    return Date.now().toString(36) + Math.random().toString(36).substr(2);
+                }
+
+                // Validar email
+                function isValidEmail(email) {
+                    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+                }
+
+                // Exportar todo el sistema a Excel
+                function exportFullSystemToExcel() {
+                    try {
+                        const wb = XLSX.utils.book_new();
+                        
+                        // Hoja 1: Asesores
+                        const advisorsData = initialData.advisors.map(advisor => ({
+                            'ID': advisor.id,
+                            'Nombre': advisor.name,
+                            'Email': advisor.email,
+                            'Teléfono': advisor.phone,
+                            'Especialidad': advisor.specialty,
+                            'Estado': advisor.status,
+                            'Notificaciones': advisor.notifications ? 'Sí' : 'No',
+                            'Creado': formatDate(advisor.created)
+                        }));
+                        const ws1 = XLSX.utils.json_to_sheet(advisorsData);
+                        XLSX.utils.book_append_sheet(wb, ws1, 'Asesores');
+                        
+                        // Hoja 2: Tareas
+                        const tasksData = initialData.tasks.map(task => ({
+                            'Código': task.code,
+                            'Descripción': task.description,
+                            'Tipo': task.type,
+                            'Proyecto': task.project,
+                            'Tiempo Estimado (h)': task.estimatedTime,
+                            'Dificultad': task.difficulty,
+                            'Activa': task.active ? 'Sí' : 'No'
+                        }));
+                        const ws2 = XLSX.utils.json_to_sheet(tasksData);
+                        XLSX.utils.book_append_sheet(wb, ws2, 'Tareas');
+                        
+                        // Hoja 3: Calendario actual
+                        const monthName = getMonthName(currentMonth);
+                        const ws3Data = [['Calendario', monthName, currentYear]];
+                        ws3Data.push(['Asesor', ...Array.from({length: 31}, (_, i) => i + 1)]);
+                        
+                        initialData.advisors.forEach(advisor => {
+                            const row = [advisor.name];
+                            for (let day = 1; day <= 31; day++) {
+                                row.push(getCalendarValue(advisor.id, day) || '');
+                            }
+                            ws3Data.push(row);
+                        });
+                        
+                        const ws3 = XLSX.utils.aoa_to_sheet(ws3Data);
+                        XLSX.utils.book_append_sheet(wb, ws3, 'Calendario');
+                        
+                        // Descargar
+                        const fileName = `Sistema_ICE_Completo_${new Date().toISOString().split('T')[0]}.xlsx`;
+                        XLSX.writeFile(wb, fileName);
+                        
+                        addNotification(
+                            'Exportación Completa',
+                            `Sistema exportado a ${fileName}`,
+                            'success'
+                        );
+                    } catch (error) {
+                        console.error('Error al exportar:', error);
+                        showNotification('Error', 'No se pudo exportar el sistema completo', 'error');
+                    }
+                }
+
+                // Importar desde Excel existente
+                function importFromExcel() {
+                    const input = document.createElement('input');
+                    input.type = 'file';
+                    input.accept = '.xlsx,.xls';
+                    
+                    input.onchange = e => {
+                        const file = e.target.files[0];
+                        if (!file) return;
+                        
+                        const reader = new FileReader();
+                        reader.onload = event => {
+                            try {
+                                const data = new Uint8Array(event.target.result);
+                                const workbook = XLSX.read(data, {type: 'array'});
+                                
+                                // Procesar hojas
+                                workbook.SheetNames.forEach(sheetName => {
+                                    const worksheet = workbook.Sheets[sheetName];
+                                    const jsonData = XLSX.utils.sheet_to_json(worksheet);
+                                    
+                                    console.log(`Procesando hoja: ${sheetName}`, jsonData);
+                                    // Aquí implementarías la lógica de importación específica
+                                });
+                                
+                                showNotification('Importación', 'Archivo Excel procesado. Revise la consola para ver los datos.', 'info');
+                            } catch (error) {
+                                console.error('Error al importar Excel:', error);
+                                showNotification('Error', 'No se pudo procesar el archivo Excel', 'error');
+                            }
+                        };
+                        
+                        reader.readAsArrayBuffer(file);
+                    };
+                    
+                    input.click();
+                }
+
+                // Buscar en todo el sistema
+                function searchSystem(query) {
+                    if (!query.trim()) return;
+                    
+                    const results = {
+                        advisors: [],
+                        tasks: [],
+                        calendar: []
+                    };
+                    
+                    // Buscar en asesores
+                    results.advisors = initialData.advisors.filter(advisor => 
+                        advisor.name.toLowerCase().includes(query.toLowerCase()) ||
+                        advisor.email.toLowerCase().includes(query.toLowerCase())
+                    );
+                    
+                    // Buscar en tareas
+                    results.tasks = initialData.tasks.filter(task => 
+                        task.code.toLowerCase().includes(query.toLowerCase()) ||
+                        task.description.toLowerCase().includes(query.toLowerCase())
+                    );
+                    
+                    // Buscar en calendario
+                    if (initialData.calendar[currentYear] && initialData.calendar[currentYear][currentMonth]) {
+                        const monthData = initialData.calendar[currentYear][currentMonth];
+                        Object.keys(monthData).forEach(advisorId => {
+                            const advisorDays = monthData[advisorId];
+                            Object.keys(advisorDays).forEach(day => {
+                                if (advisorDays[day].toLowerCase().includes(query.toLowerCase())) {
+                                    const advisor = initialData.advisors.find(a => a.id === parseInt(advisorId));
+                                    if (advisor) {
+                                        results.calendar.push({
+                                            advisor: advisor.name,
+                                            day: parseInt(day),
+                                            value: advisorDays[day]
+                                        });
+                                    }
+                                }
+                            });
+                        });
+                    }
+                    
+                    // Mostrar resultados
+                    let message = `Resultados para "${query}":\n\n`;
+                    if (results.advisors.length > 0) {
+                        message += `Asesores (${results.advisors.length}):\n`;
+                        results.advisors.forEach(a => message += `• ${a.name}\n`);
+                        message += '\n';
+                    }
+                    
+                    if (results.tasks.length > 0) {
+                        message += `Tareas (${results.tasks.length}):\n`;
+                        results.tasks.forEach(t => message += `• ${t.code}: ${t.description}\n`);
+                        message += '\n';
+                    }
+                    
+                    if (results.calendar.length > 0) {
+                        message += `En calendario (${results.calendar.length}):\n`;
+                        results.calendar.forEach(c => 
+                            message += `• ${c.advisor} - Día ${c.day}: ${c.value}\n`
+                        );
+                    }
+                    
+                    if (results.advisors.length === 0 && results.tasks.length === 0 && results.calendar.length === 0) {
+                        message = `No se encontraron resultados para "${query}"`;
+                    }
+                    
+                    alert(message);
+                }
+
+                // Configurar atajos de teclado
+                document.addEventListener('keydown', function(e) {
+                    // Ctrl + S: Guardar
+                    if (e.ctrlKey && e.key === 's') {
+                        e.preventDefault();
+                        saveData();
+                        showNotification('Guardado', 'Datos guardados correctamente', 'success');
+                    }
+                    
+                    // Ctrl + E: Exportar
+                    if (e.ctrlKey && e.key === 'e') {
+                        e.preventDefault();
+                        exportCalendarToExcel();
+                    }
+                    
+                    // Ctrl + N: Nuevo asesor
+                    if (e.ctrlKey && e.key === 'n') {
+                        e.preventDefault();
+                        showAdvisorModal('new');
+                    }
+                    
+                    // Ctrl + T: Nueva tarea
+                    if (e.ctrlKey && e.key === 't') {
+                        e.preventDefault();
+                        showTaskModal('new');
+                    }
+                    
+                    // F1: Ayuda
+                    if (e.key === 'F1') {
+                        e.preventDefault();
+                        showHelp();
+                    }
+                });
+
+                function showHelp() {
+                    const helpText = `
+SISTEMA DE GESTIÓN CURRICULAR ICE - AYUDAS
+
+ATAJOS DE TECLADO:
+• Ctrl + S: Guardar datos
+• Ctrl + E: Exportar calendario a Excel
+• Ctrl + N: Nuevo asesor
+• Ctrl + T: Nueva tarea
+• F1: Mostrar esta ayuda
+
+FUNCIONALIDADES PRINCIPALES:
+1. Calendario: Click en cualquier celda para editar
+2. Asesores: Agregar, editar o eliminar
+3. Tareas: Catálogo completo de tareas disponibles
+4. Reportes: Estadísticas y análisis
+5. Notificaciones: Sistema de alertas
+
+ALMACENAMIENTO:
+• Los datos se guardan automáticamente en tu navegador
+• Puedes exportar respaldos completos
+• Funciona sin conexión a internet
+
+PWA (APP MÓVIL):
+• Instálala desde el menú de tu navegador
+• Funciona en Android, iOS y escritorio
+`;
+
+                    alert(helpText);
+                }
+
+                // ============================================
+                // FIN DEL SISTEMA
+                // ============================================
+            </script>
 </body>
 </html>
