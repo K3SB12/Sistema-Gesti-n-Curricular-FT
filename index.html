@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Gestión Curricular - Formación Tecnológica</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --success-color: #27ae60;
+            --warning-color: #f39c12;
+            --danger-color: #e74c3c;
+        }
+        
+        .dashboard-card {
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: transform 0.3s;
+            margin-bottom: 20px;
+        }
+        
+        .dashboard-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .task-badge {
+            font-size: 0.75rem;
+            padding: 3px 8px;
+            border-radius: 12px;
+        }
+        
+        .calendar-day {
+            height: 40px;
+            border: 1px solid #dee2e6;
+            cursor: pointer;
+        }
+        
+        .calendar-day.task-assigned {
+            background-color: #e8f4fd;
+            border-color: #3498db;
+        }
+        
+        .calendar-day.vacation {
+            background-color: #d4edda;
+            border-color: #27ae60;
+        }
+        
+        .calendar-day.absence {
+            background-color: #f8d7da;
+            border-color: #e74c3c;
+        }
+        
+        .notification-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+        }
+        
+        .nav-tabs .nav-link.active {
+            border-bottom: 3px solid var(--secondary-color);
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">
+                <img src="logo.png" alt="Logo" height="30" class="d-inline-block align-text-top">
+                Gestión Curricular - Formación Tecnológica
+            </a>
+            <div class="d-flex align-items-center">
+                <span class="text-light me-3">Bienvenido, Administrador</span>
+                <div class="dropdown">
+                    <button class="btn btn-outline-light dropdown-toggle" type="button" id="userMenu" data-bs-toggle="dropdown">
+                        <i class="bi bi-person-circle"></i>
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="#"><i class="bi bi-gear"></i> Configuración</a></li>
+                        <li><a class="dropdown-item" href="#"><i class="bi bi-bell"></i> Notificaciones</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item text-danger" href="#"><i class="bi bi-box-arrow-right"></i> Cerrar sesión</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Dashboard Principal -->
+    <div class="container-fluid mt-4">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-2">
+                <div class="list-group">
+                    <a href="#dashboard" class="list-group-item list-group-item-action active">
+                        <i class="bi bi-speedometer2"></i> Dashboard
+                    </a>
+                    <a href="#calendario" class="list-group-item list-group-item-action">
+                        <i class="bi bi-calendar3"></i> Calendario
+                    </a>
+                    <a href="#tareas" class="list-group-item list-group-item-action">
+                        <i class="bi bi-list-task"></i> Tareas
+                        <span class="badge bg-danger float-end">3</span>
+                    </a>
+                    <a href="#asesores" class="list-group-item list-group-item-action">
+                        <i class="bi bi-people"></i> Asesores
+                    </a>
+                    <a href="#informes" class="list-group-item list-group-item-action">
+                        <i class="bi bi-file-text"></i> Informes
+                        <span class="badge bg-warning float-end">2</span>
+                    </a>
+                    <a href="#reportes" class="list-group-item list-group-item-action">
+                        <i class="bi bi-bar-chart"></i> Reportes
+                    </a>
+                    <a href="#configuracion" class="list-group-item list-group-item-action">
+                        <i class="bi bi-gear"></i> Configuración
+                    </a>
+                </div>
+                
+                <!-- Notificaciones rápidas -->
+                <div class="mt-4 p-3 border rounded">
+                    <h6><i class="bi bi-bell"></i> Alertas</h6>
+                    <div class="alert alert-warning p-2 mb-2">
+                        <small>Kevin necesita apoyo con Tarea T19</small>
+                    </div>
+                    <div class="alert alert-info p-2 mb-2">
+                        <small>Informe pendiente de revisión</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Contenido Principal -->
+            <div class="col-md-10">
+                <!-- Filtros y búsqueda -->
+                <div class="row mb-4">
+                    <div class="col-md-4">
+                        <select class="form-select" id="monthSelect">
+                            <option value="1">Enero</option>
+                            <option value="2">Febrero</option>
+                            <option value="3" selected>Marzo</option>
+                            <!-- Resto de meses -->
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <select class="form-select" id="advisorSelect">
+                            <option value="">Todos los asesores</option>
+                            <option value="karen">Karen White Acuña</option>
+                            <option value="moises">Moisés Abarca Pérez</option>
+                            <!-- Resto de asesores -->
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="input-group">
+                            <input type="text" class="form-control" placeholder="Buscar tarea...">
+                            <button class="btn btn-primary">Buscar</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tarjetas de resumen -->
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="card dashboard-card bg-primary text-white">
+                            <div class="card-body">
+                                <h5 class="card-title">Tareas Activas</h5>
+                                <h2 class="card-text">42</h2>
+                                <p class="card-text"><small>Este mes</small></p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card dashboard-card bg-success text-white">
+                            <div class="card-body">
+                                <h5 class="card-title">Asesores Activos</h5>
+                                <h2 class="card-text">8</h2>
+                                <p class="card-text"><small>Total equipo</small></p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card dashboard-card bg-warning text-white">
+                            <div class="card-body">
+                                <h5 class="card-title">Informes Pendientes</h5>
+                                <h2 class="card-text">5</h2>
+                                <p class="card-text"><small>Requieren atención</small></p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card dashboard-card bg-info text-white">
+                            <div class="card-body">
+                                <h5 class="card-title">Vacaciones</h5>
+                                <h2 class="card-text">12</h2>
+                                <p class="card-text"><small>Días programados</small></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pestañas principales -->
+                <ul class="nav nav-tabs mt-4" id="mainTabs">
+                    <li class="nav-item">
+                        <a class="nav-link active" data-bs-toggle="tab" href="#calendarTab">Calendario</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-bs-toggle="tab" href="#tasksTab">Gestión de Tareas</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-bs-toggle="tab" href="#reportsTab">Reportes</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-bs-toggle="tab" href="#supportTab">Solicitudes de Apoyo</a>
+                    </li>
+                </ul>
+
+                <div class="tab-content mt-3" id="mainTabsContent">
+                    <!-- Tab Calendario -->
+                    <div class="tab-pane fade show active" id="calendarTab">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5>Calendario de Asignaciones - Marzo 2026</h5>
+                            </div>
+                            <div class="card-body">
+                                <div id="calendarView"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tab Gestión de Tareas -->
+                    <div class="tab-pane fade" id="tasksTab">
+                        <div class="row">
+                            <div class="col-md-8">
+                                <div class="card">
+                                    <div class="card-header d-flex justify-content-between">
+                                        <h5>Lista de Tareas</h5>
+                                        <button class="btn btn-sm btn-primary" onclick="openTaskModal()">
+                                            <i class="bi bi-plus"></i> Nueva Tarea
+                                        </button>
+                                    </div>
+                                    <div class="card-body">
+                                        <table class="table table-hover">
+                                            <thead>
+                                                <tr>
+                                                    <th>Código</th>
+                                                    <th>Descripción</th>
+                                                    <th>Asignado a</th>
+                                                    <th>Estado</th>
+                                                    <th>Acciones</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="tasksTable">
+                                                <!-- Datos cargados dinámicamente -->
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h5>Tipos de Ausencia</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="mb-2">
+                                            <span class="badge bg-success">V</span> Vacaciones
+                                        </div>
+                                        <div class="mb-2">
+                                            <span class="badge bg-warning">P</span> Permisos
+                                        </div>
+                                        <div class="mb-2">
+                                            <span class="badge bg-danger">I</span> Incapacidad
+                                        </div>
+                                        <div class="mb-2">
+                                            <span class="badge bg-primary">T#</span> Tarea Asignada
+                                        </div>
+                                        <hr>
+                                        <h6>Proyectos Principales</h6>
+                                        <ul>
+                                            <li>Diseño de recursos didácticos</li>
+                                            <li>Actualización módulos</li>
+                                            <li>Guías trabajo autónomo</li>
+                                            <li>Guías EPJA</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tab Reportes -->
+                    <div class="tab-pane fade" id="reportsTab">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h5>Distribución de Tareas por Asesor</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <canvas id="tasksChart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h5>Estadísticas Mensuales</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <canvas id="monthlyStats"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tab Solicitudes de Apoyo -->
+                    <div class="tab-pane fade" id="supportTab">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5>Solicitudes de Apoyo Pendientes</h5>
+                            </div>
+                            <div class="card-body">
+                                <div id="supportRequests">
+                                    <!-- Solicitudes cargadas dinámicamente -->
+                                </div>
+                                <button class="btn btn-primary mt-3" onclick="openSupportForm()">
+                                    <i class="bi bi-plus-circle"></i> Enviar Nueva Solicitud
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para nueva tarea -->
+    <div class="modal fade" id="taskModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Asignar Nueva Tarea</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="taskForm">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Código de Tarea</label>
+                                    <input type="text" class="form-control" placeholder="Ej: T21, T14, T5">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Descripción</label>
+                                    <textarea class="form-control" rows="3"></textarea>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Proyecto</label>
+                                    <select class="form-select">
+                                        <option>Diseño de recursos didácticos</option>
+                                        <option>Propuesta Actualización Módulos</option>
+                                        <option>Propuesta Actualización Docente</option>
+                                        <option>Guías trabajo autónomo</option>
+                                        <option>Guías EPJA</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Asignar a</label>
+                                    <select class="form-select" multiple>
+                                        <option>Karen White Acuña</option>
+                                        <option>Moisés Abarca Pérez</option>
+                                        <option>Yolanda Villanueva Agüero</option>
+                                        <option>Allan Ulate Araya</option>
+                                        <option>Mariana Pérez Aguilar</option>
+                                        <option>Daniela Villanueva Piva</option>
+                                        <option>Kevin Sánchez Bogarín</option>
+                                        <option>Leonardo Calvo Calvo</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Fecha Inicio</label>
+                                    <input type="date" class="form-control">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Fecha Fin</label>
+                                    <input type="date" class="form-control">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Prioridad</label>
+                                    <select class="form-select">
+                                        <option>Baja</option>
+                                        <option>Media</option>
+                                        <option>Alta</option>
+                                        <option>Crítica</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" onclick="saveTask()">Guardar Tarea</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para informes de apoyo -->
+    <div class="modal fade" id="supportModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Enviar Informe de Apoyo</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="supportForm">
+                        <div class="mb-3">
+                            <label class="form-label">Tarea que requiere apoyo</label>
+                            <select class="form-select">
+                                <option>T21 - Diseño módulos avanzados</option>
+                                <option>T14 - Revisión curricular</option>
+                                <option>T5 - Elaboración guías</option>
+                                <!-- Otras tareas -->
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Descripción del problema</label>
+                            <textarea class="form-control" rows="4" placeholder="Describa en qué necesita apoyo específico..."></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Urgencia</label>
+                            <select class="form-select">
+                                <option>Baja (resolver esta semana)</option>
+                                <option>Media (resolver en 2-3 días)</option>
+                                <option>Alta (resolver en 24 horas)</option>
+                                <option>Crítica (resolver inmediatamente)</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Adjuntar archivos</label>
+                            <input type="file" class="form-control" multiple>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" onclick="submitSupportRequest()">Enviar Solicitud</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Datos de ejemplo basados en tu Excel
+        const tasks = [
+            { id: 1, code: 'T21', description: 'Diseño módulos avanzados', assignedTo: ['Karen', 'Moisés'], status: 'En progreso', project: 'Actualización Módulos' },
+            { id: 2, code: 'T14', description: 'Revisión curricular', assignedTo: ['Todos'], status: 'Pendiente', project: 'Actualización Docente' },
+            { id: 3, code: 'T5', description: 'Elaboración guías de trabajo', assignedTo: ['Leonardo', 'Kevin', 'Mariana'], status: 'Completado', project: 'Recursos Didácticos' },
+            // Más tareas...
+        ];
+
+        const advisors = [
+            { name: 'Karen White Acuña', tasks: 12, vacations: 5, active: true },
+            { name: 'Moisés Abarca Pérez', tasks: 10, vacations: 3, active: true },
+            { name: 'Yolanda Villanueva Agüero', tasks: 8, vacations: 2, active: true },
+            // Más asesores...
+        ];
+
+        // Inicializar gráficos
+        function initializeCharts() {
+            // Gráfico de distribución de tareas
+            const tasksCtx = document.getElementById('tasksChart').getContext('2d');
+            new Chart(tasksCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Karen', 'Moisés', 'Yolanda', 'Allan', 'Mariana', 'Daniela', 'Kevin', 'Leonardo'],
+                    datasets: [{
+                        data: [12, 10, 8, 6, 9, 7, 11, 8],
+                        backgroundColor: [
+                            '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0',
+                            '#9966FF', '#FF9F40', '#C9CBCF', '#7CBB00'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+
+            // Gráfico de estadísticas mensuales
+            const statsCtx = document.getElementById('monthlyStats').getContext('2d');
+            new Chart(statsCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun'],
+                    datasets: [
+                        {
+                            label: 'Tareas Asignadas',
+                            data: [65, 59, 80, 81, 56, 55],
+                            backgroundColor: '#36A2EB'
+                        },
+                        {
+                            label: 'Vacaciones',
+                            data: [28, 48, 40, 19, 86, 27],
+                            backgroundColor: '#4BC0C0'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        // Funciones para modales
+        function openTaskModal() {
+            const modal = new bootstrap.Modal(document.getElementById('taskModal'));
+            modal.show();
+        }
+
+        function openSupportForm() {
+            const modal = new bootstrap.Modal(document.getElementById('supportModal'));
+            modal.show();
+        }
+
+        function saveTask() {
+            // Lógica para guardar tarea
+            alert('Tarea guardada exitosamente');
+            bootstrap.Modal.getInstance(document.getElementById('taskModal')).hide();
+        }
+
+        function submitSupportRequest() {
+            // Lógica para enviar solicitud de apoyo
+            alert('Solicitud de apoyo enviada. Recibirá notificación cuando sea revisada.');
+            bootstrap.Modal.getInstance(document.getElementById('supportModal')).hide();
+            
+            // Enviar notificación por correo
+            sendEmailNotification();
+        }
+
+        function sendEmailNotification() {
+            // Integración con servicio de correo
+            console.log('Enviando notificación por correo...');
+            // Usar React-Email o servicio similar
+        }
+
+        // Inicializar cuando cargue la página
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeCharts();
+            renderCalendar();
+            loadTasksTable();
+            loadSupportRequests();
+        });
+
+        // Funciones para cargar datos
+        function loadTasksTable() {
+            const table = document.getElementById('tasksTable');
+            let html = '';
+            
+            tasks.forEach(task => {
+                html += `
+                <tr>
+                    <td><span class="badge bg-primary">${task.code}</span></td>
+                    <td>${task.description}</td>
+                    <td>${task.assignedTo.join(', ')}</td>
+                    <td><span class="badge ${getStatusBadge(task.status)}">${task.status}</span></td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-primary">Editar</button>
+                        <button class="btn btn-sm btn-outline-info">Ver detalles</button>
+                    </td>
+                </tr>
+                `;
+            });
+            
+            table.innerHTML = html;
+        }
+
+        function getStatusBadge(status) {
+            switch(status) {
+                case 'Completado': return 'bg-success';
+                case 'En progreso': return 'bg-warning';
+                case 'Pendiente': return 'bg-secondary';
+                default: return 'bg-light text-dark';
+            }
+        }
+
+        function renderCalendar() {
+            // Implementar calendario interactivo
+            // Similar a tu vista de Excel pero interactiva
+        }
+
+        function loadSupportRequests() {
+            // Cargar solicitudes de apoyo pendientes
+        }
+
+        // WebSocket para notificaciones en tiempo real
+        function setupWebSocket() {
+            const ws = new WebSocket('wss://tuservidor.com/ws');
+            
+            ws.onmessage = function(event) {
+                const data = JSON.parse(event.data);
+                
+                if (data.type === 'NEW_SUPPORT_REQUEST') {
+                    showNotification('Nueva solicitud de apoyo', `${data.user} necesita ayuda con ${data.task}`);
+                }
+                
+                if (data.type === 'TASK_UPDATE') {
+                    showNotification('Tarea actualizada', `La tarea ${data.task} cambió de estado`);
+                }
+            };
+        }
+
+        function showNotification(title, message) {
+            // Mostrar notificación del sistema
+            if (Notification.permission === 'granted') {
+                new Notification(title, { body: message });
+            }
+            
+            // También mostrar en la interfaz
+            const alertDiv = document.createElement('div');
+            alertDiv.className = 'alert alert-info alert-dismissible fade show';
+            alertDiv.innerHTML = `
+                <strong>${title}</strong> ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            
+            document.querySelector('.container-fluid').insertBefore(alertDiv, document.querySelector('.row'));
+        }
+
+        // Solicitar permiso para notificaciones
+        if ('Notification' in window) {
+            Notification.requestPermission();
+        }
+    </script>
+</body>
+</html>
