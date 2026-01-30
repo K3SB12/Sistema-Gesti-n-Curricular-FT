@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Gestión Curricular - ICE</title>
+    <title>Sistema de Gestión Curricular - EGC</title>
     
     <!-- Bootstrap 5 (GRATIS) -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -16,9 +16,9 @@
     
     <style>
         :root {
-            --ice-blue: #005CA9;
-            --ice-green: #00A859;
-            --ice-gray: #F2F2F2;
+            --egc-blue: #005CA9;
+            --egc-green: #00A859;
+            --egc-gray: #F2F2F2;
         }
         
         body {
@@ -26,12 +26,12 @@
             background-color: #f8f9fa;
         }
         
-        .ice-header {
-            background: linear-gradient(135deg, var(--ice-blue) 0%, #003366 100%);
+        .egc-header {
+            background: linear-gradient(135deg, var(--egc-blue) 0%, #003366 100%);
             color: white;
         }
         
-        .ice-card {
+        .egc-card {
             border: none;
             border-radius: 10px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
@@ -39,7 +39,7 @@
             margin-bottom: 1rem;
         }
         
-        .ice-card:hover {
+        .egc-card:hover {
             transform: translateY(-2px);
         }
         
@@ -64,6 +64,10 @@
         .cell-permission { background-color: #fff3cd !important; }
         .cell-incapacity { background-color: #f8d7da !important; }
         .cell-task { background-color: #d1ecf1 !important; }
+        .cell-holiday { 
+            background-color: #e9ecef !important; 
+            color: #6c757d !important;
+        }
         
         .task-code {
             font-size: 0.7rem;
@@ -81,13 +85,13 @@
         }
         
         .month-tab.active {
-            background-color: var(--ice-blue) !important;
+            background-color: var(--egc-blue) !important;
             color: white !important;
             font-weight: bold;
         }
         
         .stats-card {
-            border-left: 4px solid var(--ice-blue);
+            border-left: 4px solid var(--egc-blue);
         }
         
         /* Estilos para móvil */
@@ -121,8 +125,8 @@
         }
         
         /* Estilos para modales */
-        .modal-ice .modal-header {
-            background-color: var(--ice-blue);
+        .modal-egc .modal-header {
+            background-color: var(--egc-blue);
             color: white;
         }
         
@@ -135,8 +139,8 @@
         }
         
         /* Loading spinner */
-        .spinner-border.ice-spinner {
-            color: var(--ice-blue);
+        .spinner-border.egc-spinner {
+            color: var(--egc-blue);
             width: 1.5rem;
             height: 1.5rem;
         }
@@ -160,6 +164,52 @@
                 height: 200px !important;
             }
         }
+        
+        /* Tooltips personalizados */
+        .calendar-cell[title] {
+            position: relative;
+        }
+        
+        .calendar-cell[title]:hover::after {
+            content: attr(title);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            white-space: pre-wrap;
+            max-width: 250px;
+            z-index: 1000;
+            pointer-events: none;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        
+        /* Indicador de nota */
+        .note-indicator {
+            position: absolute;
+            bottom: 1px;
+            left: 1px;
+            font-size: 0.5rem;
+            background: #ffc107;
+            color: #000;
+            border-radius: 2px;
+            padding: 1px 3px;
+            line-height: 1;
+        }
+        
+        /* Asesor inactivo */
+        .inactive-advisor {
+            opacity: 0.6;
+            background-color: #f8f9fa !important;
+        }
+        
+        .inactive-advisor td {
+            color: #6c757d !important;
+        }
     </style>
     
     <!-- PWA Manifest -->
@@ -168,11 +218,12 @@
 </head>
 <body>
     <!-- ========== NAVEGACIÓN ========== -->
-    <nav class="navbar navbar-expand-lg ice-header sticky-top">
+    <nav class="navbar navbar-expand-lg egc-header sticky-top">
         <div class="container-fluid">
             <a class="navbar-brand d-flex align-items-center" href="#">
-                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/6b/ICE_Group_logo.svg/240px-ICE_Group_logo.svg.png" 
-                     height="40" class="d-inline-block align-top me-2" alt="ICE Logo">
+                <div class="bg-white rounded-circle p-2 me-2">
+                    <span style="color: #005CA9; font-weight: bold; font-size: 1.2rem;">EGC</span>
+                </div>
                 <div>
                     <span class="fw-bold">Gestión Curricular</span><br>
                     <small class="opacity-75">Formación Tecnológica</small>
@@ -256,7 +307,7 @@
             <!-- Tarjetas de estadísticas -->
             <div class="row">
                 <div class="col-md-3">
-                    <div class="card ice-card stats-card">
+                    <div class="card egc-card stats-card">
                         <div class="card-body">
                             <div class="d-flex justify-content-between">
                                 <div>
@@ -273,7 +324,7 @@
                 </div>
                 
                 <div class="col-md-3">
-                    <div class="card ice-card stats-card">
+                    <div class="card egc-card stats-card">
                         <div class="card-body">
                             <div class="d-flex justify-content-between">
                                 <div>
@@ -290,7 +341,7 @@
                 </div>
                 
                 <div class="col-md-3">
-                    <div class="card ice-card stats-card">
+                    <div class="card egc-card stats-card">
                         <div class="card-body">
                             <div class="d-flex justify-content-between">
                                 <div>
@@ -307,7 +358,7 @@
                 </div>
                 
                 <div class="col-md-3">
-                    <div class="card ice-card stats-card">
+                    <div class="card egc-card stats-card">
                         <div class="card-body">
                             <div class="d-flex justify-content-between">
                                 <div>
@@ -327,23 +378,23 @@
             <!-- Gráficos -->
             <div class="row mt-4">
                 <div class="col-md-6">
-                    <div class="card ice-card">
+                    <div class="card egc-card">
                         <div class="card-header">
-                            <h5 class="mb-0">Distribución de Tareas</h5>
+                            <h5 class="mb-0">Tareas Más Asignadas</h5>
                         </div>
                         <div class="card-body small-chart">
-                            <canvas id="chartTasksDistribution"></canvas>
+                            <canvas id="chartTopTasks"></canvas>
                         </div>
                     </div>
                 </div>
                 
                 <div class="col-md-6">
-                    <div class="card ice-card">
+                    <div class="card egc-card">
                         <div class="card-header">
-                            <h5 class="mb-0">Actividad por Mes</h5>
+                            <h5 class="mb-0">Distribución por Asesor</h5>
                         </div>
                         <div class="card-body small-chart">
-                            <canvas id="chartMonthlyActivity"></canvas>
+                            <canvas id="chartAdvisorsDistribution"></canvas>
                         </div>
                     </div>
                 </div>
@@ -352,7 +403,7 @@
             <!-- Alertas recientes -->
             <div class="row mt-4">
                 <div class="col-12">
-                    <div class="card ice-card">
+                    <div class="card egc-card">
                         <div class="card-header d-flex justify-content-between align-items-center">
                             <h5 class="mb-0">Alertas Recientes</h5>
                             <button class="btn btn-sm btn-outline-primary" onclick="markAllAsRead()">
@@ -400,10 +451,28 @@
                 </div>
             </div>
             
+            <!-- Controles del calendario -->
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="showInactiveAdvisors" checked 
+                               onchange="toggleInactiveAdvisors()">
+                        <label class="form-check-label" for="showInactiveAdvisors">
+                            Mostrar asesores inactivos
+                        </label>
+                    </div>
+                </div>
+                <div class="col-md-6 text-end">
+                    <button class="btn btn-sm btn-outline-secondary" onclick="toggleAllAdvisors()">
+                        <i class="bi bi-eye"></i> Mostrar/Ocultar Todos
+                    </button>
+                </div>
+            </div>
+            
             <!-- Calendario -->
             <div class="row">
                 <div class="col-12">
-                    <div class="card ice-card">
+                    <div class="card egc-card">
                         <div class="card-header d-flex justify-content-between align-items-center">
                             <h4 class="mb-0" id="currentMonthTitle">Enero 2026</h4>
                             <div class="btn-group">
@@ -436,6 +505,8 @@
                                         <span class="badge bg-warning">P = Permisos</span>
                                         <span class="badge bg-danger">I = Incapacidad</span>
                                         <span class="badge bg-info">T# = Tarea Asignada</span>
+                                        <span class="badge bg-secondary">F = Feriado</span>
+                                        <span class="badge bg-dark">N = Nota</span>
                                     </div>
                                 </div>
                                 <div class="col-md-6 text-end">
@@ -464,12 +535,15 @@
                     <button class="btn btn-success" onclick="showAdvisorModal('new')">
                         <i class="bi bi-person-plus"></i> Nuevo Asesor
                     </button>
+                    <button class="btn btn-outline-secondary" onclick="recoverDeletedAdvisors()">
+                        <i class="bi bi-arrow-clockwise"></i> Recuperar
+                    </button>
                 </div>
             </div>
             
             <div class="row">
                 <div class="col-12">
-                    <div class="card ice-card">
+                    <div class="card egc-card">
                         <div class="card-body">
                             <div class="table-responsive">
                                 <table class="table table-hover">
@@ -484,6 +558,34 @@
                                         </tr>
                                     </thead>
                                     <tbody id="advisorsTable">
+                                        <!-- Datos cargados dinámicamente -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Historial de asesores eliminados -->
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="card egc-card">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="bi bi-trash"></i> Asesores Eliminados</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Nombre</th>
+                                            <th>Email</th>
+                                            <th>Eliminado</th>
+                                            <th>Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="deletedAdvisorsTable">
                                         <!-- Datos cargados dinámicamente -->
                                     </tbody>
                                 </table>
@@ -510,7 +612,7 @@
             
             <div class="row">
                 <div class="col-12">
-                    <div class="card ice-card">
+                    <div class="card egc-card">
                         <div class="card-body">
                             <div class="table-responsive">
                                 <table class="table table-hover">
@@ -546,9 +648,14 @@
             
             <div class="row">
                 <div class="col-md-6">
-                    <div class="card ice-card">
-                        <div class="card-header">
-                            <h5 class="mb-0">Reporte de Productividad</h5>
+                    <div class="card egc-card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">Productividad por Asesor</h5>
+                            <select class="form-select form-select-sm w-auto" id="chartAdvisorSelect" onchange="updateAdvisorsChart()">
+                                <option value="all">Todos los asesores</option>
+                                <option value="active">Solo activos</option>
+                                <option value="top5">Top 5</option>
+                            </select>
                         </div>
                         <div class="card-body small-report-chart">
                             <canvas id="chartProductivity"></canvas>
@@ -562,15 +669,20 @@
                 </div>
                 
                 <div class="col-md-6">
-                    <div class="card ice-card">
-                        <div class="card-header">
-                            <h5 class="mb-0">Control de Ausencias</h5>
+                    <div class="card egc-card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">Tareas Más Activas</h5>
+                            <select class="form-select form-select-sm w-auto" id="chartTaskSelect" onchange="updateTasksChart()">
+                                <option value="top5">Top 5</option>
+                                <option value="top10">Top 10</option>
+                                <option value="all">Todas</option>
+                            </select>
                         </div>
                         <div class="card-body small-report-chart">
-                            <canvas id="chartAbsences"></canvas>
+                            <canvas id="chartTaskActivity"></canvas>
                         </div>
                         <div class="card-footer">
-                            <button class="btn btn-sm btn-outline-primary" onclick="generateAbsenceReport()">
+                            <button class="btn btn-sm btn-outline-primary" onclick="generateTaskActivityReport()">
                                 <i class="bi bi-download"></i> Descargar Reporte
                             </button>
                         </div>
@@ -580,7 +692,7 @@
             
             <div class="row mt-4">
                 <div class="col-12">
-                    <div class="card ice-card">
+                    <div class="card egc-card">
                         <div class="card-header d-flex justify-content-between align-items-center">
                             <h5 class="mb-0">Generar Reportes Personalizados</h5>
                             <div class="btn-group">
@@ -638,7 +750,7 @@
     <div class="modal fade" id="editCellModal" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
-                <div class="modal-header ice-header">
+                <div class="modal-header egc-header">
                     <h5 class="modal-title text-white">Editar Asignación</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
@@ -657,26 +769,30 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Nueva Asignación:</label>
-                        <select class="form-select" id="editCellNewValue">
+                        <select class="form-select" id="editCellNewValue" multiple size="6">
                             <option value="">-- Seleccionar --</option>
                             <optgroup label="Ausencias">
                                 <option value="V">V - Vacaciones</option>
                                 <option value="P">P - Permisos</option>
                                 <option value="I">I - Incapacidad</option>
+                                <option value="F">F - Feriado</option>
                             </optgroup>
                             <optgroup label="Tareas">
                                 <!-- Se llena dinámicamente -->
                             </optgroup>
                         </select>
+                        <small class="form-text text-muted">Ctrl+Click para seleccionar múltiples</small>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Notas (opcional):</label>
-                        <textarea class="form-control" id="editCellNotes" rows="2"></textarea>
+                        <textarea class="form-control" id="editCellNotes" rows="3" 
+                                  placeholder="Agregue notas específicas para este día..."></textarea>
+                        <small class="form-text text-muted">Esta nota será visible solo para este asesor en este día específico</small>
                     </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="button" class="btn btn-danger" onclick="clearCellAssignment()">Limpiar</button>
+                    <button type="button" class="btn btn-danger" onclick="clearCellAssignment()">Limpiar Todo</button>
                     <button type="button" class="btn btn-primary" onclick="saveCellEdit()">Guardar Cambios</button>
                 </div>
             </div>
@@ -687,7 +803,7 @@
     <div class="modal fade" id="advisorModal" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content">
-                <div class="modal-header ice-header">
+                <div class="modal-header egc-header">
                     <h5 class="modal-title text-white" id="advisorModalTitle">Nuevo Asesor</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
@@ -732,11 +848,18 @@
                                 Recibir notificaciones por correo
                             </label>
                         </div>
+                        <div class="alert alert-warning" id="deleteWarning" style="display: none;">
+                            <i class="bi bi-exclamation-triangle"></i>
+                            <strong>Advertencia:</strong> Al "eliminar" un asesor, solo se marcará como inactivo. 
+                            Sus datos se mantendrán en el historial para futuras recuperaciones.
+                        </div>
                     </form>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="button" class="btn btn-danger" id="advisorDeleteBtn" onclick="deleteAdvisor()" style="display: none;">Eliminar</button>
+                    <button type="button" class="btn btn-danger" id="advisorDeactivateBtn" onclick="deactivateAdvisor()" style="display: none;">
+                        <i class="bi bi-person-x"></i> Desactivar
+                    </button>
                     <button type="button" class="btn btn-primary" onclick="saveAdvisor()">Guardar Asesor</button>
                 </div>
             </div>
@@ -747,7 +870,7 @@
     <div class="modal fade" id="taskModal" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content">
-                <div class="modal-header ice-header">
+                <div class="modal-header egc-header">
                     <h5 class="modal-title text-white" id="taskModalTitle">Nueva Tarea</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
@@ -759,7 +882,7 @@
                                 <div class="mb-3">
                                     <label class="form-label">Código de Tarea *</label>
                                     <input type="text" class="form-control" id="taskCode" required>
-                                    <small class="form-text text-muted">Ej: T1, T2, T25, etc.</small>
+                                    <small class="form-text text-muted">Ej: T1, T2, F, VAC, etc.</small>
                                 </div>
                             </div>
                             <div class="col-md-6">
@@ -770,6 +893,8 @@
                                         <option value="urgent">Urgente</option>
                                         <option value="recurrent">Recurrente</option>
                                         <option value="project">Proyecto</option>
+                                        <option value="absence">Ausencia</option>
+                                        <option value="holiday">Feriado</option>
                                     </select>
                                 </div>
                             </div>
@@ -812,81 +937,8 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="button" class="btn btn-danger" id="taskDeleteBtn" onclick="deleteTask()" style="display: none;">Eliminar</button>
+                    <button type="button" class="btn btn-danger" id="taskDeleteBtn" onclick="deleteTask()" style="display: none;">Desactivar Tarea</button>
                     <button type="button" class="btn btn-primary" onclick="saveTask()">Guardar Tarea</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal: Solicitud de Apoyo -->
-    <div class="modal fade" id="supportModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header bg-warning">
-                    <h5 class="modal-title">Solicitud de Apoyo</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label">Tarea que requiere apoyo</label>
-                        <select class="form-select" id="supportTask">
-                            <!-- Se llena dinámicamente -->
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Descripción del problema *</label>
-                        <textarea class="form-control" id="supportDescription" rows="4" required 
-                                  placeholder="Describa en detalle en qué necesita apoyo..."></textarea>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label">Urgencia</label>
-                                <select class="form-select" id="supportUrgency">
-                                    <option value="low">Baja (resolver en 1 semana)</option>
-                                    <option value="medium" selected>Media (resolver en 2-3 días)</option>
-                                    <option value="high">Alta (resolver en 24 horas)</option>
-                                    <option value="critical">Crítica (resolver inmediatamente)</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label">Adjuntar archivo (opcional)</label>
-                                <input type="file" class="form-control" id="supportFile">
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="button" class="btn btn-warning" onclick="submitSupportRequest()">
-                        <i class="bi bi-send"></i> Enviar Solicitud
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal: Notificaciones -->
-    <div class="modal fade" id="notificationsModal" tabindex="-1">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header ice-header">
-                    <h5 class="modal-title text-white">Centro de Notificaciones</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="list-group" id="notificationsList">
-                        <!-- Notificaciones dinámicas -->
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-outline-secondary" onclick="clearAllNotifications()">
-                        Limpiar Todas
-                    </button>
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
                 </div>
             </div>
         </div>
@@ -898,8 +950,8 @@
             <div class="row">
                 <div class="col-md-6">
                     <small class="text-muted">
-                        <i class="bi bi-shield-check"></i> Sistema de Gestión Curricular - ICE<br>
-                        <i class="bi bi-calendar-check"></i> Versión 2.1 | Última actualización: <span id="lastUpdate"></span>
+                        <i class="bi bi-shield-check"></i> Sistema de Gestión Curricular - EGC<br>
+                        <i class="bi bi-calendar-check"></i> Versión 3.0 | Última actualización: <span id="lastUpdate"></span>
                     </small>
                 </div>
                 <div class="col-md-6 text-end">
@@ -917,8 +969,8 @@
     
     <script>
         // ============================================
-        // SISTEMA COMPLETO DE GESTIÓN CURRICULAR ICE
-        // VERSIÓN 2.1 - CON CORRECCIONES IMPLEMENTADAS
+        // SISTEMA COMPLETO DE GESTIÓN CURRICULAR EGC
+        // VERSIÓN 3.0 - CON TODAS LAS CORRECCIONES
         // ============================================
 
         // Variables globales
@@ -927,6 +979,7 @@
         let currentAdvisorId = null;
         let currentTaskId = null;
         let currentCellData = null;
+        let charts = {}; // Para almacenar instancias de gráficos
 
         // Datos iniciales (persistencia en localStorage)
         const initialData = {
@@ -934,82 +987,98 @@
                 {
                     id: 1,
                     name: "Karen White Acuña",
-                    email: "karen.white@ice.go.cr",
+                    email: "karen.white@egc.cr",
                     phone: "",
                     specialty: "curricular",
                     status: "active",
                     notifications: true,
-                    created: new Date().toISOString()
+                    created: new Date().toISOString(),
+                    active: true,
+                    deleted: false
                 },
                 {
                     id: 2,
                     name: "Moisés Abarca Pérez",
-                    email: "moises.abarca@ice.go.cr",
+                    email: "moises.abarca@egc.cr",
                     phone: "",
                     specialty: "tecnologica",
                     status: "active",
                     notifications: true,
-                    created: new Date().toISOString()
+                    created: new Date().toISOString(),
+                    active: true,
+                    deleted: false
                 },
                 {
                     id: 3,
                     name: "Yolanda Villanueva Agüero",
-                    email: "yolanda.villanueva@ice.go.cr",
+                    email: "yolanda.villanueva@egc.cr",
                     phone: "",
                     specialty: "docente",
                     status: "active",
                     notifications: true,
-                    created: new Date().toISOString()
+                    created: new Date().toISOString(),
+                    active: true,
+                    deleted: false
                 },
                 {
                     id: 4,
                     name: "Mariana Pérez Aguilar",
-                    email: "mariana.perez@ice.go.cr",
+                    email: "mariana.perez@egc.cr",
                     phone: "",
                     specialty: "recursos",
                     status: "active",
                     notifications: true,
-                    created: new Date().toISOString()
+                    created: new Date().toISOString(),
+                    active: true,
+                    deleted: false
                 },
                 {
                     id: 5,
                     name: "Daniela Villanueva Piva",
-                    email: "daniela.villanueva@ice.go.cr",
+                    email: "daniela.villanueva@egc.cr",
                     phone: "",
                     specialty: "evaluacion",
                     status: "active",
                     notifications: true,
-                    created: new Date().toISOString()
+                    created: new Date().toISOString(),
+                    active: true,
+                    deleted: false
                 },
                 {
                     id: 6,
                     name: "Kevin Sánchez Bogarín",
-                    email: "kevin.sanchez@ice.go.cr",
+                    email: "kevin.sanchez@egc.cr",
                     phone: "",
                     specialty: "tecnologica",
                     status: "active",
                     notifications: true,
-                    created: new Date().toISOString()
+                    created: new Date().toISOString(),
+                    active: true,
+                    deleted: false
                 },
                 {
                     id: 7,
                     name: "Leonardo Calvo Calvo",
-                    email: "leonardo.calvo@ice.go.cr",
+                    email: "leonardo.calvo@egc.cr",
                     phone: "",
                     specialty: "curricular",
                     status: "active",
                     notifications: true,
-                    created: new Date().toISOString()
+                    created: new Date().toISOString(),
+                    active: true,
+                    deleted: false
                 },
                 {
                     id: 8,
                     name: "Allan Ulate Araya",
-                    email: "allan.ulate@ice.go.cr",
+                    email: "allan.ulate@egc.cr",
                     phone: "",
                     specialty: "docente",
                     status: "active",
                     notifications: true,
-                    created: new Date().toISOString()
+                    created: new Date().toISOString(),
+                    active: true,
+                    deleted: false
                 }
             ],
             
@@ -1017,6 +1086,7 @@
                 { code: "V", description: "Vacaciones", type: "absence", project: "", estimatedTime: 8, difficulty: "low", active: true },
                 { code: "P", description: "Permisos", type: "absence", project: "", estimatedTime: 8, difficulty: "low", active: true },
                 { code: "I", description: "Incapacidad", type: "absence", project: "", estimatedTime: 8, difficulty: "low", active: true },
+                { code: "F", description: "Feriado", type: "holiday", project: "", estimatedTime: 8, difficulty: "low", active: true },
                 { code: "T1", description: "Diseño curricular básico", type: "normal", project: "actualizacion_modulos", estimatedTime: 40, difficulty: "medium", active: true },
                 { code: "T2", description: "Revisión de módulos existentes", type: "normal", project: "actualizacion_modulos", estimatedTime: 30, difficulty: "medium", active: true },
                 { code: "T3", description: "Elaboración de guías didácticas", type: "normal", project: "diseno_recursos", estimatedTime: 25, difficulty: "medium", active: true },
@@ -1057,6 +1127,10 @@
                 }
             },
             
+            notes: {}, // Nueva estructura para notas: año -> mes -> asesor -> día -> nota
+            
+            deletedAdvisors: [], // Historial de asesores "eliminados" (desactivados)
+            
             notifications: [],
             supportRequests: [],
             settings: {
@@ -1065,14 +1139,15 @@
                 lastBackup: null,
                 notificationsEnabled: true,
                 emailNotifications: false,
-                theme: "light"
+                theme: "light",
+                showInactiveAdvisors: true
             }
         };
 
         // Cargar datos desde localStorage o usar iniciales
         function loadData() {
             try {
-                const savedData = localStorage.getItem('ice_calendar_system');
+                const savedData = localStorage.getItem('egc_calendar_system');
                 if (savedData) {
                     const parsed = JSON.parse(savedData);
                     
@@ -1080,6 +1155,8 @@
                     if (parsed.advisors) initialData.advisors = parsed.advisors;
                     if (parsed.tasks) initialData.tasks = parsed.tasks;
                     if (parsed.calendar) initialData.calendar = parsed.calendar;
+                    if (parsed.notes) initialData.notes = parsed.notes;
+                    if (parsed.deletedAdvisors) initialData.deletedAdvisors = parsed.deletedAdvisors;
                     if (parsed.notifications) initialData.notifications = parsed.notifications;
                     if (parsed.supportRequests) initialData.supportRequests = parsed.supportRequests;
                     if (parsed.settings) initialData.settings = parsed.settings;
@@ -1098,7 +1175,7 @@
         // Guardar datos en localStorage
         function saveData() {
             try {
-                localStorage.setItem('ice_calendar_system', JSON.stringify(initialData));
+                localStorage.setItem('egc_calendar_system', JSON.stringify(initialData));
                 console.log('Datos guardados en localStorage');
                 
                 // Crear backup automático
@@ -1153,7 +1230,7 @@
         }
 
         // ============================================
-        // DASHBOARD
+        // DASHBOARD - CON GRÁFICOS MEJORADOS
         // ============================================
 
         function loadDashboard() {
@@ -1163,15 +1240,16 @@
         }
 
         function updateStatistics() {
-            // Actualizar contadores
-            document.getElementById('statAdvisors').textContent = initialData.advisors.length;
+            // Contar asesores activos (no eliminados)
+            const activeAdvisors = initialData.advisors.filter(a => !a.deleted && a.status === 'active').length;
+            document.getElementById('statAdvisors').textContent = activeAdvisors;
             
-            // Contar solo tareas activas - CORRECCIÓN IMPLEMENTADA
+            // Contar solo tareas activas
             const activeTasksCount = initialData.tasks.filter(task => task.active !== false).length;
             document.getElementById('statTasks').textContent = activeTasksCount;
             
-            document.getElementById('advisorCountBadge').textContent = initialData.advisors.length;
-            document.getElementById('taskCountBadge').textContent = activeTasksCount; // Usar contador de activas
+            document.getElementById('advisorCountBadge').textContent = initialData.advisors.filter(a => !a.deleted).length;
+            document.getElementById('taskCountBadge').textContent = activeTasksCount;
             
             // Calcular días de vacaciones
             let vacationDays = 0;
@@ -1191,71 +1269,146 @@
         }
 
         function loadCharts() {
-            // Gráfico de distribución de tareas
-            const tasksCtx = document.getElementById('chartTasksDistribution').getContext('2d');
-            new Chart(tasksCtx, {
-                type: 'pie',
+            // Destruir gráficos existentes
+            if (charts.topTasks) charts.topTasks.destroy();
+            if (charts.advisorsDistribution) charts.advisorsDistribution.destroy();
+            
+            // Gráfico de tareas más asignadas
+            const topTasks = getTopTasks(5);
+            const tasksCtx = document.getElementById('chartTopTasks').getContext('2d');
+            charts.topTasks = new Chart(tasksCtx, {
+                type: 'bar',
                 data: {
-                    labels: initialData.advisors.slice(0, 5).map(a => a.name.split(' ')[0]),
+                    labels: topTasks.map(item => item.code),
                     datasets: [{
-                        data: [12, 8, 6, 10, 7],
-                        backgroundColor: [
-                            '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF'
-                        ]
+                        label: 'Asignaciones',
+                        data: topTasks.map(item => item.count),
+                        backgroundColor: topTasks.map((_, i) => 
+                            ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF'][i % 5]
+                        ),
+                        borderWidth: 1
                     }]
                 },
                 options: {
                     responsive: true,
                     plugins: {
                         legend: {
-                            position: 'bottom'
+                            display: false
                         },
                         title: {
                             display: true,
-                            text: 'Tareas por Asesor'
+                            text: 'Top 5 Tareas Más Asignadas'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const task = topTasks.find(t => t.code === context.label);
+                                    return `${task.description}: ${context.parsed.y} asignaciones`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Número de Asignaciones'
+                            }
                         }
                     }
                 }
             });
 
-            // Gráfico de actividad mensual
-            const activityCtx = document.getElementById('chartMonthlyActivity').getContext('2d');
-            new Chart(activityCtx, {
-                type: 'line',
+            // Gráfico de distribución por asesor
+            const advisorsData = getAdvisorsTaskDistribution();
+            const advisorsCtx = document.getElementById('chartAdvisorsDistribution').getContext('2d');
+            charts.advisorsDistribution = new Chart(advisorsCtx, {
+                type: 'pie',
                 data: {
-                    labels: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun'],
-                    datasets: [
-                        {
-                            label: 'Tareas Completadas',
-                            data: [65, 59, 80, 81, 56, 55],
-                            borderColor: '#36A2EB',
-                            backgroundColor: 'rgba(54, 162, 235, 0.1)',
-                            fill: true
-                        },
-                        {
-                            label: 'Días Vacaciones',
-                            data: [28, 48, 40, 19, 86, 27],
-                            borderColor: '#4BC0C0',
-                            backgroundColor: 'rgba(75, 192, 192, 0.1)',
-                            fill: true
-                        }
-                    ]
+                    labels: advisorsData.map(item => item.name.split(' ')[0]),
+                    datasets: [{
+                        data: advisorsData.map(item => item.tasks),
+                        backgroundColor: advisorsData.map((_, i) => 
+                            ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40', '#8AC926', '#1982C4'][i % 8]
+                        )
+                    }]
                 },
                 options: {
                     responsive: true,
-                    scales: {
-                        y: {
-                            beginAtZero: true
-                        }
-                    },
                     plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: {
+                                boxWidth: 12,
+                                font: {
+                                    size: 10
+                                }
+                            }
+                        },
                         title: {
                             display: true,
-                            text: 'Actividad Mensual'
+                            text: 'Tareas por Asesor'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const advisor = advisorsData[context.dataIndex];
+                                    return `${advisor.name}: ${context.parsed} tareas`;
+                                }
+                            }
                         }
                     }
                 }
             });
+        }
+
+        function getTopTasks(limit = 5) {
+            const taskCounts = {};
+            
+            // Contar asignaciones de cada tarea
+            if (initialData.calendar[currentYear] && initialData.calendar[currentYear][currentMonth]) {
+                const monthData = initialData.calendar[currentYear][currentMonth];
+                Object.values(monthData).forEach(advisorDays => {
+                    Object.values(advisorDays).forEach(value => {
+                        if (value) {
+                            const values = value.includes(',') ? value.split(',').map(v => v.trim()) : [value];
+                            values.forEach(v => {
+                                if (v && !['V', 'P', 'I', 'F'].includes(v)) {
+                                    taskCounts[v] = (taskCounts[v] || 0) + 1;
+                                }
+                            });
+                        }
+                    });
+                });
+            }
+            
+            // Convertir a array y ordenar
+            const tasksArray = Object.entries(taskCounts).map(([code, count]) => {
+                const task = initialData.tasks.find(t => t.code === code);
+                return {
+                    code,
+                    description: task ? task.description : code,
+                    count
+                };
+            });
+            
+            // Ordenar por count descendente y limitar
+            return tasksArray.sort((a, b) => b.count - a.count).slice(0, limit);
+        }
+
+        function getAdvisorsTaskDistribution() {
+            return initialData.advisors
+                .filter(a => !a.deleted && a.status === 'active')
+                .map(advisor => {
+                    const tasks = getAssignedTasksCount(advisor.id);
+                    return {
+                        id: advisor.id,
+                        name: advisor.name,
+                        tasks: tasks
+                    };
+                })
+                .sort((a, b) => b.tasks - a.tasks);
         }
 
         function loadRecentAlerts() {
@@ -1341,12 +1494,18 @@
         }
 
         // ============================================
-        // CALENDARIO - CON MÚLTIPLES TAREAS POR DÍA
+        // CALENDARIO - CON NOTAS Y CONTROL DE ASESORES
         // ============================================
 
         function loadCalendar() {
             generateMonthTabs();
             renderCalendar();
+            
+            // Configurar switch de asesores inactivos
+            const switchElement = document.getElementById('showInactiveAdvisors');
+            if (switchElement) {
+                switchElement.checked = initialData.settings.showInactiveAdvisors !== false;
+            }
         }
 
         function generateMonthTabs() {
@@ -1389,7 +1548,7 @@
             const header = document.getElementById('calendarHeader');
             header.innerHTML = `
                 <tr>
-                    <th style="width: 200px;">Asesor</th>
+                    <th style="width: 200px;">Asesor <span class="badge bg-secondary">${getActiveAdvisorsCount()}</span></th>
                     ${Array.from({length: daysInMonth}, (_, i) => 
                         `<th class="text-center">${i + 1}<br><small>${getDayName(currentYear, currentMonth, i + 1)}</small></th>`
                     ).join('')}
@@ -1401,14 +1560,27 @@
             const body = document.getElementById('calendarBody');
             body.innerHTML = '';
             
-            initialData.advisors.forEach(advisor => {
+            const showInactive = initialData.settings.showInactiveAdvisors !== false;
+            const advisorsToShow = initialData.advisors.filter(a => 
+                !a.deleted && (showInactive || a.status === 'active')
+            );
+            
+            advisorsToShow.forEach(advisor => {
                 const row = document.createElement('tr');
+                if (advisor.status === 'inactive' || advisor.deleted) {
+                    row.classList.add('inactive-advisor');
+                }
+                
                 let totalTasks = 0;
                 
                 // Celda del nombre
                 const nameCell = document.createElement('td');
                 nameCell.className = 'advisor-name fw-bold';
-                nameCell.textContent = advisor.name;
+                nameCell.innerHTML = `
+                    ${advisor.name}
+                    ${advisor.status === 'inactive' ? '<span class="badge bg-secondary ms-1">Inactivo</span>' : ''}
+                    ${advisor.deleted ? '<span class="badge bg-danger ms-1">Eliminado</span>' : ''}
+                `;
                 row.appendChild(nameCell);
                 
                 // Celdas de días
@@ -1418,6 +1590,30 @@
                     
                     // Obtener valor del calendario
                     const value = getCalendarValue(advisor.id, day);
+                    
+                    // Obtener nota (si existe)
+                    const note = getCalendarNote(advisor.id, day);
+                    
+                    // Construir tooltip
+                    let tooltip = '';
+                    if (advisor.status === 'inactive') {
+                        tooltip += 'Asesor inactivo\n';
+                    }
+                    if (advisor.deleted) {
+                        tooltip += 'Asesor eliminado\n';
+                    }
+                    if (note) {
+                        tooltip += `Nota: ${note}\n`;
+                    }
+                    if (value) {
+                        const values = getCalendarValues(advisor.id, day);
+                        tooltip += `Asignaciones: ${values.join(', ')}`;
+                    }
+                    
+                    if (tooltip) {
+                        cell.title = tooltip.trim();
+                    }
+                    
                     if (value) {
                         // Obtener todas las clases para múltiples valores
                         const values = getCalendarValues(advisor.id, day);
@@ -1425,7 +1621,7 @@
                             cell.classList.add(getCellClassByValue(val));
                         });
                         
-                        // Si hay múltiples valores
+                        // Mostrar valores
                         if (values.length <= 2) {
                             cell.innerHTML = values.map(v => `<span class="task-code">${v}</span>`).join('') + 
                                              `<small class="day-number">${day}</small>`;
@@ -1436,10 +1632,20 @@
                                                 +${values.length - 1}
                                               </span>`;
                         }
-                        // Contar solo tareas (no ausencias)
+                        
+                        // Indicador de nota
+                        if (note) {
+                            cell.innerHTML += `<span class="note-indicator" title="Tiene nota">N</span>`;
+                        }
+                        
                         totalTasks += values.filter(v => v.startsWith('T')).length;
                     } else {
                         cell.innerHTML = `<small class="day-number">${day}</small>`;
+                        
+                        // Indicador de nota (incluso si no hay tareas)
+                        if (note) {
+                            cell.innerHTML += `<span class="note-indicator" title="Tiene nota">N</span>`;
+                        }
                     }
                     
                     // Evento click para editar
@@ -1457,6 +1663,10 @@
             });
         }
 
+        function getActiveAdvisorsCount() {
+            return initialData.advisors.filter(a => !a.deleted && a.status === 'active').length;
+        }
+
         function getDayName(year, month, day) {
             const date = new Date(year, month, day);
             const days = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
@@ -1472,7 +1682,6 @@
             return initialData.calendar[currentYear][currentMonth][advisorId][day] || null;
         }
 
-        // NUEVA FUNCIÓN: Obtener múltiples valores
         function getCalendarValues(advisorId, day) {
             if (!initialData.calendar[currentYear] || 
                 !initialData.calendar[currentYear][currentMonth] ||
@@ -1492,10 +1701,21 @@
             return [value];
         }
 
+        function getCalendarNote(advisorId, day) {
+            if (!initialData.notes || 
+                !initialData.notes[currentYear] ||
+                !initialData.notes[currentYear][currentMonth] ||
+                !initialData.notes[currentYear][currentMonth][advisorId]) {
+                return null;
+            }
+            return initialData.notes[currentYear][currentMonth][advisorId][day] || null;
+        }
+
         function getCellClassByValue(value) {
             if (value === 'V') return 'cell-vacation';
             if (value === 'P') return 'cell-permission';
             if (value === 'I') return 'cell-incapacity';
+            if (value === 'F') return 'cell-holiday';
             if (value.startsWith('T')) return 'cell-task';
             return '';
         }
@@ -1505,8 +1725,11 @@
                 advisorId: advisor.id,
                 advisorName: advisor.name,
                 day: day,
-                currentValues: getCalendarValues(advisor.id, day) // Cambiar a plural
+                currentValues: getCalendarValues(advisor.id, day)
             };
+            
+            // Obtener nota existente
+            const existingNote = getCalendarNote(advisor.id, day);
             
             // Mostrar modal de edición
             document.getElementById('editCellAdvisor').value = advisor.name;
@@ -1518,6 +1741,9 @@
                 : '(Vacío)';
             document.getElementById('editCellCurrent').value = currentValuesText;
             
+            // Cargar nota existente en el textarea
+            document.getElementById('editCellNotes').value = existingNote || '';
+            
             // Llenar opciones de tareas
             const select = document.getElementById('editCellNewValue');
             select.innerHTML = `
@@ -1526,6 +1752,7 @@
                     <option value="V">V - Vacaciones</option>
                     <option value="P">P - Permisos</option>
                     <option value="I">I - Incapacidad</option>
+                    <option value="F">F - Feriado</option>
                 </optgroup>
                 <optgroup label="Tareas">
                     ${initialData.tasks.filter(task => task.active).map(task => 
@@ -1534,7 +1761,7 @@
                 </optgroup>
             `;
             
-            // Hacerlo múltiple para permitir selección de varias tareas
+            // Configurar como múltiple
             select.multiple = true;
             select.size = 6;
             
@@ -1562,7 +1789,7 @@
         function saveCellEdit() {
             const select = document.getElementById('editCellNewValue');
             const selectedValues = Array.from(select.selectedOptions).map(option => option.value);
-            const notes = document.getElementById('editCellNotes').value;
+            const notes = document.getElementById('editCellNotes').value.trim();
             
             if (!currentCellData) return;
             
@@ -1581,17 +1808,28 @@
             if (selectedValues.length > 0) {
                 initialData.calendar[currentYear][currentMonth][currentCellData.advisorId][currentCellData.day] = 
                     selectedValues.join(', ');
-                
-                // Registrar notificación
-                const taskDescriptions = selectedValues.map(v => getTaskDescription(v)).join(', ');
-                addNotification(
-                    'Calendario Actualizado',
-                    `${currentCellData.advisorName} - Día ${currentCellData.day}: ${taskDescriptions}`,
-                    'info'
-                );
             } else {
                 // Eliminar valor si no hay selecciones
                 delete initialData.calendar[currentYear][currentMonth][currentCellData.advisorId][currentCellData.day];
+            }
+            
+            // GUARDAR NOTAS
+            if (!initialData.notes) initialData.notes = {};
+            if (!initialData.notes[currentYear]) initialData.notes[currentYear] = {};
+            if (!initialData.notes[currentYear][currentMonth]) initialData.notes[currentYear][currentMonth] = {};
+            if (!initialData.notes[currentYear][currentMonth][currentCellData.advisorId]) {
+                initialData.notes[currentYear][currentMonth][currentCellData.advisorId] = {};
+            }
+            
+            if (notes) {
+                initialData.notes[currentYear][currentMonth][currentCellData.advisorId][currentCellData.day] = notes;
+            } else {
+                // Eliminar nota si está vacía
+                if (initialData.notes[currentYear] &&
+                    initialData.notes[currentYear][currentMonth] &&
+                    initialData.notes[currentYear][currentMonth][currentCellData.advisorId]) {
+                    delete initialData.notes[currentYear][currentMonth][currentCellData.advisorId][currentCellData.day];
+                }
             }
             
             // Reiniciar el select a no múltiple
@@ -1601,17 +1839,22 @@
             saveData();
             renderCalendar();
             updateStatistics();
+            if (charts.topTasks) loadCharts(); // Actualizar gráficos
             
             // Cerrar modal
             bootstrap.Modal.getInstance(document.getElementById('editCellModal')).hide();
-            showNotification('Éxito', 'Cambios guardados correctamente', 'success');
+            
+            const action = selectedValues.length > 0 ? 'actualizada' : 'limpiada';
+            showNotification('Éxito', `Asignación ${action} correctamente`, 'success');
         }
 
         function clearCellAssignment() {
-            if (confirm('¿Está seguro de que desea limpiar TODAS las asignaciones de este día?')) {
+            if (confirm('¿Está seguro de que desea limpiar TODAS las asignaciones y notas de este día?')) {
                 const select = document.getElementById('editCellNewValue');
                 // Deseleccionar todas las opciones
                 Array.from(select.options).forEach(option => option.selected = false);
+                // Limpiar notas
+                document.getElementById('editCellNotes').value = '';
             }
         }
 
@@ -1619,6 +1862,7 @@
             if (code === 'V') return 'Vacaciones';
             if (code === 'P') return 'Permisos';
             if (code === 'I') return 'Incapacidad';
+            if (code === 'F') return 'Feriado';
             
             const task = initialData.tasks.find(t => t.code === code);
             return task ? task.description : code;
@@ -1658,6 +1902,19 @@
             });
         }
 
+        function toggleInactiveAdvisors() {
+            const showInactive = document.getElementById('showInactiveAdvisors').checked;
+            initialData.settings.showInactiveAdvisors = showInactive;
+            saveData();
+            renderCalendar();
+        }
+
+        function toggleAllAdvisors() {
+            const switchElement = document.getElementById('showInactiveAdvisors');
+            switchElement.checked = !switchElement.checked;
+            toggleInactiveAdvisors();
+        }
+
         function exportCalendarToExcel() {
             try {
                 // Crear hoja de trabajo
@@ -1665,22 +1922,24 @@
                 
                 // Encabezado
                 const monthName = getMonthName(currentMonth);
-                wsData.push([`Calendario de ${monthName} ${currentYear}`]);
+                wsData.push([`Calendario de ${monthName} ${currentYear} - EGC`]);
                 wsData.push([]);
                 
                 // Encabezado de columnas
-                const header = ['Asesor'];
+                const header = ['Asesor', 'Estado'];
                 const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
                 for (let i = 1; i <= daysInMonth; i++) {
                     header.push(i.toString());
                 }
                 header.push('Total Tareas');
+                header.push('Notas');
                 wsData.push(header);
                 
                 // Datos
-                initialData.advisors.forEach(advisor => {
-                    const row = [advisor.name];
+                initialData.advisors.filter(a => !a.deleted).forEach(advisor => {
+                    const row = [advisor.name, advisor.status === 'active' ? 'Activo' : 'Inactivo'];
                     let totalTasks = 0;
+                    let notesSummary = [];
                     
                     for (let day = 1; day <= daysInMonth; day++) {
                         const value = getCalendarValue(advisor.id, day);
@@ -1689,9 +1948,16 @@
                             const values = getCalendarValues(advisor.id, day);
                             totalTasks += values.filter(v => v.startsWith('T')).length;
                         }
+                        
+                        // Recolectar notas
+                        const note = getCalendarNote(advisor.id, day);
+                        if (note) {
+                            notesSummary.push(`Día ${day}: ${note}`);
+                        }
                     }
                     
                     row.push(totalTasks);
+                    row.push(notesSummary.join('; '));
                     wsData.push(row);
                 });
                 
@@ -1701,7 +1967,7 @@
                 XLSX.utils.book_append_sheet(wb, ws, monthName);
                 
                 // Descargar
-                const fileName = `Calendario_${monthName}_${currentYear}.xlsx`;
+                const fileName = `Calendario_EGC_${monthName}_${currentYear}.xlsx`;
                 XLSX.writeFile(wb, fileName);
                 
                 showNotification('Éxito', `Calendario exportado a ${fileName}`, 'success');
@@ -1716,18 +1982,25 @@
         }
 
         // ============================================
-        // GESTIÓN DE ASESORES
+        // GESTIÓN DE ASESORES - SIN ELIMINACIÓN PERMANENTE
         // ============================================
 
         function loadAdvisors() {
             const table = document.getElementById('advisorsTable');
             table.innerHTML = '';
             
-            initialData.advisors.forEach((advisor, index) => {
+            // Mostrar solo asesores no eliminados
+            const activeAdvisors = initialData.advisors.filter(a => !a.deleted);
+            
+            activeAdvisors.forEach((advisor, index) => {
                 // Calcular tareas asignadas este mes
                 const assignedTasks = getAssignedTasksCount(advisor.id);
                 
                 const row = document.createElement('tr');
+                if (advisor.status === 'inactive') {
+                    row.classList.add('table-secondary');
+                }
+                
                 row.innerHTML = `
                     <td>${index + 1}</td>
                     <td>
@@ -1736,7 +2009,7 @@
                     </td>
                     <td>${advisor.email}</td>
                     <td>
-                        <span class="badge bg-primary">${assignedTasks} tareas</span><br>
+                        <span class="badge ${assignedTasks > 0 ? 'bg-primary' : 'bg-secondary'}">${assignedTasks} tareas</span><br>
                         <small>este mes</small>
                     </td>
                     <td>
@@ -1749,10 +2022,52 @@
                             <button class="btn btn-outline-primary" onclick="showAdvisorModal('edit', ${advisor.id})">
                                 <i class="bi bi-pencil"></i>
                             </button>
-                            <button class="btn btn-outline-danger" onclick="deleteAdvisorPrompt(${advisor.id})">
+                            <button class="btn btn-outline-warning" onclick="toggleAdvisorStatus(${advisor.id})" title="${advisor.status === 'active' ? 'Desactivar' : 'Activar'}">
+                                <i class="bi ${advisor.status === 'active' ? 'bi-person-x' : 'bi-person-check'}"></i>
+                            </button>
+                            <button class="btn btn-outline-danger" onclick="deactivateAdvisorPrompt(${advisor.id})" title="Marcar como eliminado">
                                 <i class="bi bi-trash"></i>
                             </button>
                         </div>
+                    </td>
+                `;
+                table.appendChild(row);
+            });
+            
+            // Cargar historial de eliminados
+            loadDeletedAdvisors();
+        }
+
+        function loadDeletedAdvisors() {
+            const table = document.getElementById('deletedAdvisorsTable');
+            table.innerHTML = '';
+            
+            const deletedAdvisors = initialData.deletedAdvisors;
+            
+            if (deletedAdvisors.length === 0) {
+                table.innerHTML = `
+                    <tr>
+                        <td colspan="4" class="text-center text-muted">
+                            <i class="bi bi-trash"></i> No hay asesores eliminados
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            deletedAdvisors.forEach((advisor, index) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${advisor.name}</td>
+                    <td>${advisor.email}</td>
+                    <td>${new Date(advisor.deletedAt).toLocaleDateString()}</td>
+                    <td>
+                        <button class="btn btn-sm btn-success" onclick="recoverAdvisor(${advisor.id})">
+                            <i class="bi bi-arrow-clockwise"></i> Recuperar
+                        </button>
+                        <button class="btn btn-sm btn-danger" onclick="permanentlyDeleteAdvisor(${advisor.id})">
+                            <i class="bi bi-trash-fill"></i> Eliminar Permanentemente
+                        </button>
                     </td>
                 `;
                 table.appendChild(row);
@@ -1802,7 +2117,8 @@
         function showAdvisorModal(action, advisorId = null) {
             const modal = new bootstrap.Modal(document.getElementById('advisorModal'));
             const form = document.getElementById('advisorForm');
-            const deleteBtn = document.getElementById('advisorDeleteBtn');
+            const deleteBtn = document.getElementById('advisorDeactivateBtn');
+            const warningDiv = document.getElementById('deleteWarning');
             
             if (action === 'new') {
                 document.getElementById('advisorModalTitle').textContent = 'Nuevo Asesor';
@@ -1811,10 +2127,11 @@
                 document.getElementById('advisorStatus').value = 'active';
                 document.getElementById('advisorReceiveNotifications').checked = true;
                 deleteBtn.style.display = 'none';
+                warningDiv.style.display = 'none';
                 currentAdvisorId = null;
             } else if (action === 'edit' && advisorId) {
                 document.getElementById('advisorModalTitle').textContent = 'Editar Asesor';
-                const advisor = initialData.advisors.find(a => a.id === advisorId);
+                const advisor = initialData.advisors.find(a => a.id === advisorId && !a.deleted);
                 if (advisor) {
                     document.getElementById('advisorId').value = advisor.id;
                     document.getElementById('advisorName').value = advisor.name;
@@ -1824,6 +2141,10 @@
                     document.getElementById('advisorStatus').value = advisor.status;
                     document.getElementById('advisorReceiveNotifications').checked = advisor.notifications || true;
                     deleteBtn.style.display = 'block';
+                    deleteBtn.innerHTML = advisor.status === 'active' ? 
+                        '<i class="bi bi-person-x"></i> Desactivar' : 
+                        '<i class="bi bi-person-check"></i> Activar';
+                    warningDiv.style.display = 'block';
                     currentAdvisorId = advisorId;
                 }
             }
@@ -1878,7 +2199,9 @@
                     specialty,
                     status,
                     notifications,
-                    created: new Date().toISOString()
+                    created: new Date().toISOString(),
+                    active: true,
+                    deleted: false
                 });
                 
                 addNotification(
@@ -1891,55 +2214,182 @@
             saveData();
             loadAdvisors();
             updateStatistics();
+            renderCalendar();
             
             bootstrap.Modal.getInstance(document.getElementById('advisorModal')).hide();
             showNotification('Éxito', 'Asesor guardado correctamente', 'success');
         }
 
-        function deleteAdvisorPrompt(advisorId) {
-            const advisor = initialData.advisors.find(a => a.id === advisorId);
+        function toggleAdvisorStatus(advisorId) {
+            const advisor = initialData.advisors.find(a => a.id === advisorId && !a.deleted);
             if (!advisor) return;
             
-            if (confirm(`¿Está seguro de que desea eliminar a ${advisor.name}?\n\nEsta acción no se puede deshacer.`)) {
-                deleteAdvisor(advisorId);
-            }
-        }
-
-        function deleteAdvisor() {
-            if (!currentAdvisorId) return;
+            const newStatus = advisor.status === 'active' ? 'inactive' : 'active';
+            const action = newStatus === 'active' ? 'activado' : 'desactivado';
             
-            const index = initialData.advisors.findIndex(a => a.id === currentAdvisorId);
-            if (index !== -1) {
-                const advisorName = initialData.advisors[index].name;
-                initialData.advisors.splice(index, 1);
-                
-                // También eliminar del calendario
-                Object.keys(initialData.calendar).forEach(year => {
-                    Object.keys(initialData.calendar[year]).forEach(month => {
-                        if (initialData.calendar[year][month][currentAdvisorId]) {
-                            delete initialData.calendar[year][month][currentAdvisorId];
-                        }
-                    });
-                });
+            if (confirm(`¿${newStatus === 'active' ? 'Activar' : 'Desactivar'} a ${advisor.name}?`)) {
+                advisor.status = newStatus;
+                advisor.updated = new Date().toISOString();
                 
                 saveData();
                 loadAdvisors();
                 updateStatistics();
-                
-                bootstrap.Modal.getInstance(document.getElementById('advisorModal')).hide();
+                renderCalendar();
                 
                 addNotification(
-                    'Asesor Eliminado',
-                    `${advisorName} ha sido eliminado del sistema`,
-                    'warning'
+                    `Asesor ${action.charAt(0).toUpperCase() + action.slice(1)}`,
+                    `${advisor.name} ha sido ${action}`,
+                    newStatus === 'active' ? 'success' : 'warning'
                 );
                 
-                showNotification('Éxito', 'Asesor eliminado correctamente', 'success');
+                showNotification('Éxito', `Asesor ${action} correctamente`, 'success');
+            }
+        }
+
+        function deactivateAdvisorPrompt(advisorId) {
+            const advisor = initialData.advisors.find(a => a.id === advisorId && !a.deleted);
+            if (!advisor) return;
+            
+            if (confirm(`¿Marcar a ${advisor.name} como eliminado?\n\nEl asesor se moverá al historial de eliminados y podrá ser recuperado posteriormente.`)) {
+                deactivateAdvisor(advisorId);
+            }
+        }
+
+        function deactivateAdvisor(advisorId = null) {
+            const idToDeactivate = advisorId || currentAdvisorId;
+            if (!idToDeactivate) return;
+            
+            const index = initialData.advisors.findIndex(a => a.id === idToDeactivate && !a.deleted);
+            if (index !== -1) {
+                const advisor = initialData.advisors[index];
+                
+                // Mover al historial de eliminados
+                initialData.deletedAdvisors.push({
+                    ...advisor,
+                    deletedAt: new Date().toISOString(),
+                    originalIndex: index
+                });
+                
+                // Marcar como eliminado en la lista principal
+                advisor.deleted = true;
+                advisor.deletedAt = new Date().toISOString();
+                
+                saveData();
+                loadAdvisors();
+                updateStatistics();
+                renderCalendar();
+                
+                if (advisorId) {
+                    // Viene del prompt
+                    addNotification(
+                        'Asesor Desactivado',
+                        `${advisor.name} ha sido movido al historial de eliminados`,
+                        'warning'
+                    );
+                    showNotification('Éxito', 'Asesor marcado como eliminado', 'success');
+                } else {
+                    // Viene del modal
+                    bootstrap.Modal.getInstance(document.getElementById('advisorModal')).hide();
+                    addNotification(
+                        'Asesor Desactivado',
+                        `${advisor.name} ha sido desactivado`,
+                        'warning'
+                    );
+                    showNotification('Éxito', 'Asesor desactivado correctamente', 'success');
+                }
+            }
+        }
+
+        function recoverDeletedAdvisors() {
+            showSection('advisors');
+            document.getElementById('deletedAdvisorsTable').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function recoverAdvisor(advisorId) {
+            const deletedIndex = initialData.deletedAdvisors.findIndex(a => a.id === advisorId);
+            if (deletedIndex === -1) return;
+            
+            const deletedAdvisor = initialData.deletedAdvisors[deletedIndex];
+            
+            // Buscar en la lista principal
+            const mainIndex = initialData.advisors.findIndex(a => a.id === advisorId);
+            if (mainIndex !== -1) {
+                // Restaurar
+                initialData.advisors[mainIndex].deleted = false;
+                delete initialData.advisors[mainIndex].deletedAt;
+                
+                // Remover del historial
+                initialData.deletedAdvisors.splice(deletedIndex, 1);
+                
+                saveData();
+                loadAdvisors();
+                updateStatistics();
+                renderCalendar();
+                
+                addNotification(
+                    'Asesor Recuperado',
+                    `${deletedAdvisor.name} ha sido recuperado`,
+                    'success'
+                );
+                
+                showNotification('Éxito', 'Asesor recuperado correctamente', 'success');
+            }
+        }
+
+        function permanentlyDeleteAdvisor(advisorId) {
+            if (confirm('¿Eliminar permanentemente este asesor?\n\n⚠️ ADVERTENCIA: Esta acción NO se puede deshacer.\nSe perderán todas las asignaciones y notas de este asesor.')) {
+                // Remover del historial
+                const deletedIndex = initialData.deletedAdvisors.findIndex(a => a.id === advisorId);
+                if (deletedIndex !== -1) {
+                    const advisor = initialData.deletedAdvisors[deletedIndex];
+                    
+                    // Remover permanentemente de la lista principal
+                    const mainIndex = initialData.advisors.findIndex(a => a.id === advisorId);
+                    if (mainIndex !== -1) {
+                        initialData.advisors.splice(mainIndex, 1);
+                    }
+                    
+                    // Remover del historial
+                    initialData.deletedAdvisors.splice(deletedIndex, 1);
+                    
+                    // Remover del calendario
+                    Object.keys(initialData.calendar).forEach(year => {
+                        Object.keys(initialData.calendar[year]).forEach(month => {
+                            if (initialData.calendar[year][month][advisorId]) {
+                                delete initialData.calendar[year][month][advisorId];
+                            }
+                        });
+                    });
+                    
+                    // Remover notas
+                    if (initialData.notes) {
+                        Object.keys(initialData.notes).forEach(year => {
+                            Object.keys(initialData.notes[year]).forEach(month => {
+                                if (initialData.notes[year][month][advisorId]) {
+                                    delete initialData.notes[year][month][advisorId];
+                                }
+                            });
+                        });
+                    }
+                    
+                    saveData();
+                    loadAdvisors();
+                    updateStatistics();
+                    renderCalendar();
+                    
+                    addNotification(
+                        'Asesor Eliminado Permanentemente',
+                        `${advisor.name} ha sido eliminado permanentemente`,
+                        'danger'
+                    );
+                    
+                    showNotification('Éxito', 'Asesor eliminado permanentemente', 'success');
+                }
             }
         }
 
         // ============================================
-        // GESTIÓN DE TAREAS - CON ACTUALIZACIÓN DE CONTADORES
+        // GESTIÓN DE TAREAS - CON VALIDACIÓN MEJORADA
         // ============================================
 
         function loadTasks() {
@@ -1951,9 +2401,14 @@
                 const assignments = countTaskAssignments(task.code);
                 
                 const row = document.createElement('tr');
+                if (!task.active) {
+                    row.classList.add('table-secondary');
+                }
+                
                 row.innerHTML = `
                     <td>
                         <span class="badge ${getTaskBadgeClass(task.type)}">${task.code}</span>
+                        ${!task.active ? '<span class="badge bg-secondary ms-1">Inactiva</span>' : ''}
                     </td>
                     <td>${task.description}</td>
                     <td>${getTaskTypeText(task.type)}</td>
@@ -1968,8 +2423,8 @@
                             <button class="btn btn-outline-primary" onclick="showTaskModal('edit', '${task.code}')">
                                 <i class="bi bi-pencil"></i>
                             </button>
-                            <button class="btn btn-outline-danger" onclick="deleteTaskPrompt('${task.code}')">
-                                <i class="bi bi-trash"></i>
+                            <button class="btn btn-outline-warning" onclick="toggleTaskStatus('${task.code}')" title="${task.active ? 'Desactivar' : 'Activar'}">
+                                <i class="bi ${task.active ? 'bi-toggle-off' : 'bi-toggle-on'}"></i>
                             </button>
                         </div>
                     </td>
@@ -2003,7 +2458,9 @@
                 case 'urgent': return 'bg-danger';
                 case 'project': return 'bg-success';
                 case 'recurrent': return 'bg-info';
-                default: return 'bg-secondary';
+                case 'absence': return 'bg-warning';
+                case 'holiday': return 'bg-secondary';
+                default: return 'bg-primary';
             }
         }
 
@@ -2013,6 +2470,8 @@
                 case 'urgent': return 'Urgente';
                 case 'recurrent': return 'Recurrente';
                 case 'project': return 'Proyecto';
+                case 'absence': return 'Ausencia';
+                case 'holiday': return 'Feriado';
                 default: return type;
             }
         }
@@ -2055,6 +2514,9 @@
                     document.getElementById('taskDifficulty').value = task.difficulty || 'medium';
                     document.getElementById('taskActive').checked = task.active !== false;
                     deleteBtn.style.display = 'block';
+                    deleteBtn.innerHTML = task.active ? 
+                        '<i class="bi bi-toggle-off"></i> Desactivar Tarea' : 
+                        '<i class="bi bi-toggle-on"></i> Activar Tarea';
                     currentTaskId = taskCode;
                 }
             }
@@ -2078,9 +2540,16 @@
             const difficulty = document.getElementById('taskDifficulty').value;
             const active = document.getElementById('taskActive').checked;
             
-            // Validar código
-            if (!code.match(/^[A-Z]\d*$/)) {
-                alert('El código debe empezar con una letra seguida de números (ej: T1, T25)');
+            // Validar código - PERMITE SOLO LETRAS O LETRAS CON NÚMEROS
+            if (!code.match(/^[A-Z][A-Z0-9]*$/)) {
+                alert('El código debe empezar con una letra seguida de letras o números (ej: T1, F, T25, VAC, TAREA1)');
+                return;
+            }
+            
+            // Validar que no sea un código reservado
+            const reservedCodes = ['V', 'P', 'I', 'F'];
+            if (reservedCodes.includes(code) && !['absence', 'holiday'].includes(type)) {
+                alert(`El código "${code}" está reservado para ausencias/feriados. Use un código diferente para tareas.`);
                 return;
             }
             
@@ -2135,10 +2604,10 @@
                 );
             }
             
-            // CORRECCIÓN: Actualizar estadísticas después de guardar
             saveData();
             loadTasks();
             updateStatistics();
+            if (charts.topTasks) loadCharts(); // Actualizar gráficos
             
             bootstrap.Modal.getInstance(document.getElementById('taskModal')).hide();
             showNotification('Éxito', 'Tarea guardada correctamente', 'success');
@@ -2167,106 +2636,106 @@
             });
         }
 
-        function deleteTaskPrompt(taskCode) {
+        function toggleTaskStatus(taskCode) {
             const task = initialData.tasks.find(t => t.code === taskCode);
             if (!task) return;
             
-            const assignments = countTaskAssignments(taskCode);
-            let message = `¿Está seguro de que desea eliminar la tarea ${taskCode}?\n\n`;
+            const newStatus = !task.active;
+            const action = newStatus ? 'activada' : 'desactivada';
             
-            if (assignments > 0) {
-                message += `ADVERTENCIA: Esta tarea tiene ${assignments} asignaciones activas.\n`;
-                message += `Si la elimina, esas asignaciones quedarán vacías.\n\n`;
-            }
-            
-            message += 'Esta acción no se puede deshacer.';
-            
-            if (confirm(message)) {
-                deleteTask(taskCode);
-            }
-        }
-
-        function deleteTask(taskCode = null) {
-            const codeToDelete = taskCode || currentTaskId;
-            if (!codeToDelete) return;
-            
-            const index = initialData.tasks.findIndex(t => t.code === codeToDelete);
-            if (index !== -1) {
-                const taskDescription = initialData.tasks[index].description;
+            if (confirm(`${newStatus ? 'Activar' : 'Desactivar'} la tarea ${taskCode}?`)) {
+                task.active = newStatus;
                 
-                // Eliminar del calendario
-                removeTaskFromCalendar(codeToDelete);
-                
-                // Eliminar de la lista
-                initialData.tasks.splice(index, 1);
-                
-                // CORRECCIÓN: Actualizar estadísticas después de eliminar
                 saveData();
                 loadTasks();
                 updateStatistics();
                 
-                if (taskCode) {
-                    // Viene del prompt
-                    addNotification(
-                        'Tarea Eliminada',
-                        `Tarea ${codeToDelete} ha sido eliminada del sistema`,
-                        'warning'
-                    );
-                    showNotification('Éxito', 'Tarea eliminada correctamente', 'success');
-                } else {
-                    // Viene del modal
-                    bootstrap.Modal.getInstance(document.getElementById('taskModal')).hide();
-                    addNotification(
-                        'Tarea Eliminada',
-                        `Tarea ${codeToDelete} (${taskDescription}) ha sido eliminada`,
-                        'warning'
-                    );
-                    showNotification('Éxito', 'Tarea eliminada correctamente', 'success');
-                }
+                addNotification(
+                    `Tarea ${action.charAt(0).toUpperCase() + action.slice(1)}`,
+                    `Tarea ${taskCode} ha sido ${action}`,
+                    newStatus ? 'success' : 'warning'
+                );
+                
+                showNotification('Éxito', `Tarea ${action} correctamente`, 'success');
             }
         }
 
-        function removeTaskFromCalendar(taskCode) {
-            Object.keys(initialData.calendar).forEach(year => {
-                Object.keys(initialData.calendar[year]).forEach(month => {
-                    Object.keys(initialData.calendar[year][month]).forEach(advisorId => {
-                        const advisorDays = initialData.calendar[year][month][advisorId];
-                        Object.keys(advisorDays).forEach(day => {
-                            if (advisorDays[day]) {
-                                // Manejar múltiples valores
-                                if (advisorDays[day].includes(',')) {
-                                    const values = advisorDays[day].split(',').map(v => v.trim());
-                                    const filteredValues = values.filter(v => v !== taskCode);
-                                    if (filteredValues.length > 0) {
-                                        advisorDays[day] = filteredValues.join(', ');
-                                    } else {
-                                        delete advisorDays[day];
-                                    }
-                                } else if (advisorDays[day] === taskCode) {
-                                    delete advisorDays[day];
-                                }
-                            }
-                        });
-                    });
-                });
-            });
+        function deleteTask() {
+            if (!currentTaskId) return;
+            
+            const task = initialData.tasks.find(t => t.code === currentTaskId);
+            if (task) {
+                const newStatus = !task.active;
+                const action = newStatus ? 'activada' : 'desactivada';
+                
+                task.active = newStatus;
+                
+                saveData();
+                loadTasks();
+                updateStatistics();
+                
+                bootstrap.Modal.getInstance(document.getElementById('taskModal')).hide();
+                
+                addNotification(
+                    `Tarea ${action.charAt(0).toUpperCase() + action.slice(1)}`,
+                    `Tarea ${task.code} ha sido ${action}`,
+                    newStatus ? 'success' : 'warning'
+                );
+                
+                showNotification('Éxito', `Tarea ${action} correctamente`, 'success');
+            }
         }
 
         // ============================================
-        // REPORTES
+        // REPORTES - CON GRÁFICOS DINÁMICOS
         // ============================================
 
         function loadReports() {
-            // Gráfico de productividad
-            const productivityCtx = document.getElementById('chartProductivity').getContext('2d');
-            new Chart(productivityCtx, {
+            updateAdvisorsChart();
+            updateTasksChart();
+        }
+
+        function updateAdvisorsChart() {
+            const filter = document.getElementById('chartAdvisorSelect').value;
+            let advisorsData;
+            
+            switch(filter) {
+                case 'active':
+                    advisorsData = getAdvisorsTaskDistribution();
+                    break;
+                case 'top5':
+                    advisorsData = getAdvisorsTaskDistribution().slice(0, 5);
+                    break;
+                default: // 'all'
+                    advisorsData = initialData.advisors
+                        .filter(a => !a.deleted)
+                        .map(advisor => ({
+                            id: advisor.id,
+                            name: advisor.name,
+                            tasks: getAssignedTasksCount(advisor.id),
+                            status: advisor.status
+                        }))
+                        .sort((a, b) => b.tasks - a.tasks);
+            }
+            
+            // Destruir gráfico existente
+            if (charts.productivity) charts.productivity.destroy();
+            
+            const ctx = document.getElementById('chartProductivity').getContext('2d');
+            charts.productivity = new Chart(ctx, {
                 type: 'bar',
                 data: {
-                    labels: initialData.advisors.slice(0, 6).map(a => a.name.split(' ')[0]),
+                    labels: advisorsData.map(a => a.name.split(' ')[0]),
                     datasets: [{
-                        label: 'Tareas Completadas',
-                        data: [12, 8, 10, 6, 9, 7],
-                        backgroundColor: '#36A2EB'
+                        label: 'Tareas Asignadas',
+                        data: advisorsData.map(a => a.tasks),
+                        backgroundColor: advisorsData.map(a => 
+                            a.status === 'active' ? '#36A2EB' : '#6c757d'
+                        ),
+                        borderColor: advisorsData.map(a => 
+                            a.status === 'active' ? '#2a8bcc' : '#495057'
+                        ),
+                        borderWidth: 1
                     }]
                 },
                 options: {
@@ -2283,29 +2752,88 @@
                     plugins: {
                         title: {
                             display: true,
-                            text: 'Productividad por Asesor'
+                            text: `Productividad por Asesor (${filter === 'all' ? 'Todos' : filter === 'active' ? 'Solo Activos' : 'Top 5'})`
+                        },
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const advisor = advisorsData[context.dataIndex];
+                                    return `${advisor.name}: ${context.parsed.y} tareas (${advisor.status})`;
+                                }
+                            }
                         }
                     }
                 }
             });
+        }
 
-            // Gráfico de ausencias
-            const absencesCtx = document.getElementById('chartAbsences').getContext('2d');
-            new Chart(absencesCtx, {
-                type: 'doughnut',
+        function updateTasksChart() {
+            const filter = document.getElementById('chartTaskSelect').value;
+            let limit = 5;
+            
+            switch(filter) {
+                case 'top10':
+                    limit = 10;
+                    break;
+                case 'all':
+                    limit = initialData.tasks.length;
+                    break;
+                default:
+                    limit = 5;
+            }
+            
+            const topTasks = getTopTasks(limit);
+            
+            // Destruir gráfico existente
+            if (charts.taskActivity) charts.taskActivity.destroy();
+            
+            const ctx = document.getElementById('chartTaskActivity').getContext('2d');
+            charts.taskActivity = new Chart(ctx, {
+                type: 'horizontalBar',
                 data: {
-                    labels: ['Vacaciones', 'Permisos', 'Incapacidades'],
+                    labels: topTasks.map(t => t.code),
                     datasets: [{
-                        data: [12, 5, 3],
-                        backgroundColor: ['#4BC0C0', '#FFCE56', '#FF6384']
+                        label: 'Asignaciones',
+                        data: topTasks.map(t => t.count),
+                        backgroundColor: topTasks.map((_, i) => 
+                            ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF'][i % 5]
+                        ),
+                        borderWidth: 1
                     }]
                 },
                 options: {
+                    indexAxis: 'y',
                     responsive: true,
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Número de Asignaciones'
+                            }
+                        }
+                    },
                     plugins: {
                         title: {
                             display: true,
-                            text: 'Distribución de Ausencias'
+                            text: `Tareas Más Activas (${filter === 'all' ? 'Todas' : filter === 'top10' ? 'Top 10' : 'Top 5'})`
+                        },
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                title: function(tooltipItems) {
+                                    const task = topTasks[tooltipItems[0].dataIndex];
+                                    return task.description;
+                                },
+                                label: function(context) {
+                                    return `${context.parsed.x} asignaciones`;
+                                }
+                            }
                         }
                     }
                 }
@@ -2317,8 +2845,8 @@
             // Implementar generación de reporte
         }
 
-        function generateAbsenceReport() {
-            showNotification('Información', 'Generando reporte de ausencias...', 'info');
+        function generateTaskActivityReport() {
+            showNotification('Información', 'Generando reporte de actividad de tareas...', 'info');
             // Implementar generación de reporte
         }
 
@@ -2403,49 +2931,6 @@
                     notification.remove();
                 }
             }, 5000);
-            
-            // También mostrar en consola
-            console.log(`[${type.toUpperCase()}] ${title}: ${message}`);
-        }
-
-        function submitSupportRequest() {
-            const taskCode = document.getElementById('supportTask').value;
-            const description = document.getElementById('supportDescription').value.trim();
-            const urgency = document.getElementById('supportUrgency').value;
-            
-            if (!taskCode || !description) {
-                showNotification('Error', 'Complete todos los campos requeridos', 'error');
-                return;
-            }
-            
-            const request = {
-                id: Date.now(),
-                taskCode,
-                description,
-                urgency,
-                status: 'pending',
-                timestamp: new Date().toISOString(),
-                advisor: 'Usuario Actual' // En una versión real, sería el usuario logueado
-            };
-            
-            initialData.supportRequests.push(request);
-            saveData();
-            updateStatistics();
-            
-            // Cerrar modal
-            bootstrap.Modal.getInstance(document.getElementById('supportModal')).hide();
-            
-            // Notificación
-            addNotification(
-                'Solicitud de Apoyo Enviada',
-                `Se ha solicitado apoyo para la tarea ${taskCode}`,
-                'warning'
-            );
-            
-            showNotification('Éxito', 'Solicitud de apoyo enviada correctamente', 'success');
-            
-            // En una versión real, aquí se enviaría un correo
-            console.log(`Solicitud de apoyo enviada: ${taskCode} - ${urgency} - ${description}`);
         }
 
         function exportBackup() {
@@ -2453,7 +2938,7 @@
                 const dataStr = JSON.stringify(initialData, null, 2);
                 const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
                 
-                const exportFileDefaultName = `backup_ice_calendar_${new Date().toISOString().split('T')[0]}.json`;
+                const exportFileDefaultName = `backup_egc_calendar_${new Date().toISOString().split('T')[0]}.json`;
                 
                 const linkElement = document.createElement('a');
                 linkElement.setAttribute('href', dataUri);
@@ -2496,6 +2981,8 @@
                             initialData.advisors = importedData.advisors;
                             initialData.tasks = importedData.tasks;
                             initialData.calendar = importedData.calendar;
+                            initialData.notes = importedData.notes || {};
+                            initialData.deletedAdvisors = importedData.deletedAdvisors || [];
                             initialData.notifications = importedData.notifications || [];
                             initialData.supportRequests = importedData.supportRequests || [];
                             
@@ -2506,6 +2993,7 @@
                             loadTasks();
                             updateStatistics();
                             renderCalendar();
+                            if (charts.topTasks) loadCharts();
                             
                             addNotification(
                                 'Backup Importado',
@@ -2528,7 +3016,6 @@
         }
 
         function createBackup(type = 'manual') {
-            // En una versión real, aquí se guardaría en la nube
             console.log(`Backup ${type} creado:`, new Date().toISOString());
             initialData.settings.lastBackup = new Date().toISOString();
         }
@@ -2538,108 +3025,6 @@
                 localStorage.clear();
                 location.reload();
             }
-        }
-
-        // ============================================
-        // FUNCIONES PWA COMPLETAS
-        // ============================================
-
-        function installPWA() {
-            // Verificar si ya está instalada
-            if (window.matchMedia('(display-mode: standalone)').matches || 
-                window.navigator.standalone === true) {
-                showNotification('Ya instalada', 'La app ya está instalada en tu dispositivo', 'info');
-                return;
-            }
-            
-            // Detectar navegador y mostrar instrucciones
-            let instructions = '';
-            const userAgent = navigator.userAgent.toLowerCase();
-            
-            if (userAgent.includes('chrome')) {
-                instructions = 'Chrome: Haz clic en ⋮ (menú) → "Instalar aplicación"';
-            } else if (userAgent.includes('safari') && !userAgent.includes('chrome')) {
-                instructions = 'Safari: Haz clic en 📤 (compartir) → "Agregar a pantalla de inicio"';
-            } else if (userAgent.includes('firefox')) {
-                instructions = 'Firefox: Haz clic en ⋮ (menú) → "Instalar"';
-            } else if (userAgent.includes('edg')) {
-                instructions = 'Edge: Haz clic en ⋮ (menú) → "Aplicaciones" → "Instalar esta aplicación"';
-            } else {
-                instructions = 'Busca en el menú de tu navegador: "Instalar aplicación" o "Agregar a pantalla de inicio"';
-            }
-            
-            // Mostrar modal con instrucciones
-            const modalHTML = `
-                <div class="modal fade" id="pwaHelpModal">
-                    <div class="modal-dialog">
-                        <div class="modal-content">
-                            <div class="modal-header bg-primary text-white">
-                                <h5 class="modal-title">
-                                    <i class="bi bi-phone"></i> Instalar App Móvil
-                                </h5>
-                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                            </div>
-                            <div class="modal-body text-center">
-                                <i class="bi bi-phone" style="font-size: 4rem; color: #005CA9;"></i>
-                                <h4 class="mt-3">Instalar en tu dispositivo</h4>
-                                <p class="lead">${instructions}</p>
-                                
-                                <div class="alert alert-info mt-4">
-                                    <i class="bi bi-info-circle"></i>
-                                    <strong>Beneficios:</strong>
-                                    <ul class="mb-0 mt-2 text-start">
-                                        <li>Acceso rápido desde pantalla de inicio</li>
-                                        <li>Funciona sin internet</li>
-                                        <li>Notificaciones push</li>
-                                        <li>Experiencia como app nativa</li>
-                                    </ul>
-                                </div>
-                            </div>
-                            <div class="modal-footer">
-                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-                                <button type="button" class="btn btn-primary" onclick="checkPWAStatus()">
-                                    Verificar Estado
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
-            
-            // Agregar modal si no existe
-            if (!document.getElementById('pwaHelpModal')) {
-                const modalDiv = document.createElement('div');
-                modalDiv.innerHTML = modalHTML;
-                document.body.appendChild(modalDiv);
-            }
-            
-            // Mostrar modal
-            const modal = new bootstrap.Modal(document.getElementById('pwaHelpModal'));
-            modal.show();
-            
-            showNotification('Instalación PWA', instructions, 'info');
-        }
-
-        function checkPWAStatus() {
-            const status = {
-                isInstalled: window.matchMedia('(display-mode: standalone)').matches || 
-                            window.navigator.standalone === true,
-                hasServiceWorker: 'serviceWorker' in navigator,
-                isOnline: navigator.onLine,
-                storage: localStorage.getItem('ice_calendar_system') ? 'OK' : 'Vacío'
-            };
-            
-            let message = '📱 Estado de la App:\n\n';
-            message += `✅ Instalada: ${status.isInstalled ? 'SÍ' : 'NO (ver instrucciones)'}\n`;
-            message += `✅ Service Worker: ${status.hasServiceWorker ? 'Disponible' : 'No disponible'}\n`;
-            message += `✅ Conexión: ${status.isOnline ? 'En línea' : 'Sin conexión'}\n`;
-            message += `✅ Datos: ${status.storage}\n`;
-            
-            alert(message);
-            
-            // Cerrar modal
-            const modal = bootstrap.Modal.getInstance(document.getElementById('pwaHelpModal'));
-            if (modal) modal.hide();
         }
 
         // ============================================
@@ -2683,305 +3068,12 @@
                 if (initialData.notifications.length === 0) {
                     addNotification(
                         '¡Bienvenido!',
-                        'Sistema de Gestión Curricular ICE cargado correctamente',
+                        'Sistema de Gestión Curricular EGC cargado correctamente',
                         'success'
                     );
                 }
             }, 1000);
-            
-            // Verificar si hay solicitudes de apoyo pendientes
-            const pendingRequests = initialData.supportRequests.filter(req => req.status === 'pending').length;
-            if (pendingRequests > 0) {
-                setTimeout(() => {
-                    addNotification(
-                        'Solicitudes Pendientes',
-                        `Tiene ${pendingRequests} solicitud(es) de apoyo pendientes`,
-                        'warning'
-                    );
-                }, 2000);
-            }
         });
-
-        // ============================================
-        // FUNCIONES AUXILIARES
-        // ============================================
-
-        // Detectar si la app está instalada como PWA
-        function isRunningAsPWA() {
-            return window.matchMedia('(display-mode: standalone)').matches || 
-                   window.navigator.standalone === true;
-        }
-
-        // Función para copiar al portapapeles
-        function copyToClipboard(text) {
-            navigator.clipboard.writeText(text)
-                .then(() => showNotification('Copiado', 'Texto copiado al portapapeles', 'success'))
-                .catch(err => console.error('Error al copiar:', err));
-        }
-
-        // Formatear fecha
-        function formatDate(date) {
-            return new Date(date).toLocaleDateString('es-CR', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric'
-            });
-        }
-
-        // Generar ID único
-        function generateId() {
-            return Date.now().toString(36) + Math.random().toString(36).substr(2);
-        }
-
-        // Validar email
-        function isValidEmail(email) {
-            return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-        }
-
-        // Exportar todo el sistema a Excel
-        function exportFullSystemToExcel() {
-            try {
-                const wb = XLSX.utils.book_new();
-                
-                // Hoja 1: Asesores
-                const advisorsData = initialData.advisors.map(advisor => ({
-                    'ID': advisor.id,
-                    'Nombre': advisor.name,
-                    'Email': advisor.email,
-                    'Teléfono': advisor.phone,
-                    'Especialidad': advisor.specialty,
-                    'Estado': advisor.status,
-                    'Notificaciones': advisor.notifications ? 'Sí' : 'No',
-                    'Creado': formatDate(advisor.created)
-                }));
-                const ws1 = XLSX.utils.json_to_sheet(advisorsData);
-                XLSX.utils.book_append_sheet(wb, ws1, 'Asesores');
-                
-                // Hoja 2: Tareas
-                const tasksData = initialData.tasks.map(task => ({
-                    'Código': task.code,
-                    'Descripción': task.description,
-                    'Tipo': task.type,
-                    'Proyecto': task.project,
-                    'Tiempo Estimado (h)': task.estimatedTime,
-                    'Dificultad': task.difficulty,
-                    'Activa': task.active ? 'Sí' : 'No'
-                }));
-                const ws2 = XLSX.utils.json_to_sheet(tasksData);
-                XLSX.utils.book_append_sheet(wb, ws2, 'Tareas');
-                
-                // Hoja 3: Calendario actual
-                const monthName = getMonthName(currentMonth);
-                const ws3Data = [['Calendario', monthName, currentYear]];
-                ws3Data.push(['Asesor', ...Array.from({length: 31}, (_, i) => i + 1)]);
-                
-                initialData.advisors.forEach(advisor => {
-                    const row = [advisor.name];
-                    for (let day = 1; day <= 31; day++) {
-                        row.push(getCalendarValue(advisor.id, day) || '');
-                    }
-                    ws3Data.push(row);
-                });
-                
-                const ws3 = XLSX.utils.aoa_to_sheet(ws3Data);
-                XLSX.utils.book_append_sheet(wb, ws3, 'Calendario');
-                
-                // Descargar
-                const fileName = `Sistema_ICE_Completo_${new Date().toISOString().split('T')[0]}.xlsx`;
-                XLSX.writeFile(wb, fileName);
-                
-                addNotification(
-                    'Exportación Completa',
-                    `Sistema exportado a ${fileName}`,
-                    'success'
-                );
-            } catch (error) {
-                console.error('Error al exportar:', error);
-                showNotification('Error', 'No se pudo exportar el sistema completo', 'error');
-            }
-        }
-
-        // Importar desde Excel existente
-        function importFromExcel() {
-            const input = document.createElement('input');
-            input.type = 'file';
-            input.accept = '.xlsx,.xls';
-            
-            input.onchange = e => {
-                const file = e.target.files[0];
-                if (!file) return;
-                
-                const reader = new FileReader();
-                reader.onload = event => {
-                    try {
-                        const data = new Uint8Array(event.target.result);
-                        const workbook = XLSX.read(data, {type: 'array'});
-                        
-                        // Procesar hojas
-                        workbook.SheetNames.forEach(sheetName => {
-                            const worksheet = workbook.Sheets[sheetName];
-                            const jsonData = XLSX.utils.sheet_to_json(worksheet);
-                            
-                            console.log(`Procesando hoja: ${sheetName}`, jsonData);
-                            // Aquí implementarías la lógica de importación específica
-                        });
-                        
-                        showNotification('Importación', 'Archivo Excel procesado. Revise la consola para ver los datos.', 'info');
-                    } catch (error) {
-                        console.error('Error al importar Excel:', error);
-                        showNotification('Error', 'No se pudo procesar el archivo Excel', 'error');
-                    }
-                };
-                
-                reader.readAsArrayBuffer(file);
-            };
-            
-            input.click();
-        }
-
-        // Buscar en todo el sistema
-        function searchSystem(query) {
-            if (!query.trim()) return;
-            
-            const results = {
-                advisors: [],
-                tasks: [],
-                calendar: []
-            };
-            
-            // Buscar en asesores
-            results.advisors = initialData.advisors.filter(advisor => 
-                advisor.name.toLowerCase().includes(query.toLowerCase()) ||
-                advisor.email.toLowerCase().includes(query.toLowerCase())
-            );
-            
-            // Buscar en tareas
-            results.tasks = initialData.tasks.filter(task => 
-                task.code.toLowerCase().includes(query.toLowerCase()) ||
-                task.description.toLowerCase().includes(query.toLowerCase())
-            );
-            
-            // Buscar en calendario
-            if (initialData.calendar[currentYear] && initialData.calendar[currentYear][currentMonth]) {
-                const monthData = initialData.calendar[currentYear][currentMonth];
-                Object.keys(monthData).forEach(advisorId => {
-                    const advisorDays = monthData[advisorId];
-                    Object.keys(advisorDays).forEach(day => {
-                        if (advisorDays[day].toLowerCase().includes(query.toLowerCase())) {
-                            const advisor = initialData.advisors.find(a => a.id === parseInt(advisorId));
-                            if (advisor) {
-                                results.calendar.push({
-                                    advisor: advisor.name,
-                                    day: parseInt(day),
-                                    value: advisorDays[day]
-                                });
-                            }
-                        }
-                    });
-                });
-            }
-            
-            // Mostrar resultados
-            let message = `Resultados para "${query}":\n\n`;
-            if (results.advisors.length > 0) {
-                message += `Asesores (${results.advisors.length}):\n`;
-                results.advisors.forEach(a => message += `• ${a.name}\n`);
-                message += '\n';
-            }
-            
-            if (results.tasks.length > 0) {
-                message += `Tareas (${results.tasks.length}):\n`;
-                results.tasks.forEach(t => message += `• ${t.code}: ${t.description}\n`);
-                message += '\n';
-            }
-            
-            if (results.calendar.length > 0) {
-                message += `En calendario (${results.calendar.length}):\n`;
-                results.calendar.forEach(c => 
-                    message += `• ${c.advisor} - Día ${c.day}: ${c.value}\n`
-                );
-            }
-            
-            if (results.advisors.length === 0 && results.tasks.length === 0 && results.calendar.length === 0) {
-                message = `No se encontraron resultados para "${query}"`;
-            }
-            
-            alert(message);
-        }
-
-        // Configurar atajos de teclado
-        document.addEventListener('keydown', function(e) {
-            // Ctrl + S: Guardar
-            if (e.ctrlKey && e.key === 's') {
-                e.preventDefault();
-                saveData();
-                showNotification('Guardado', 'Datos guardados correctamente', 'success');
-            }
-            
-            // Ctrl + E: Exportar
-            if (e.ctrlKey && e.key === 'e') {
-                e.preventDefault();
-                exportCalendarToExcel();
-            }
-            
-            // Ctrl + N: Nuevo asesor
-            if (e.ctrlKey && e.key === 'n') {
-                e.preventDefault();
-                showAdvisorModal('new');
-            }
-            
-            // Ctrl + T: Nueva tarea
-            if (e.ctrlKey && e.key === 't') {
-                e.preventDefault();
-                showTaskModal('new');
-            }
-            
-            // F1: Ayuda
-            if (e.key === 'F1') {
-                e.preventDefault();
-                showHelp();
-            }
-        });
-
-        function showHelp() {
-            const helpText = `
-SISTEMA DE GESTIÓN CURRICULAR ICE - AYUDAS
-VERSIÓN 2.1 - CON MÚLTIPLES TAREAS POR DÍA
-
-ATAJOS DE TECLADO:
-• Ctrl + S: Guardar datos
-• Ctrl + E: Exportar calendario a Excel
-• Ctrl + N: Nuevo asesor
-• Ctrl + T: Nueva tarea
-• F1: Mostrar esta ayuda
-
-FUNCIONALIDADES PRINCIPALES:
-1. Calendario: Click en cualquier celda para editar
-   • Ahora permite asignar MÚLTIPLES tareas por día
-   • Mantén Ctrl/Cmd click para seleccionar varias tareas
-2. Asesores: Agregar, editar o eliminar
-3. Tareas: Catálogo completo de tareas disponibles
-4. Reportes: Estadísticas y análisis
-5. Notificaciones: Sistema de alertas
-
-NUEVAS FUNCIONALIDADES:
-• Múltiples tareas por día por asesor
-• Contadores automáticos actualizados
-• Gráficos optimizados para pantallas pequeñas
-• Mejora en la experiencia de usuario
-
-ALMACENAMIENTO:
-• Los datos se guardan automáticamente en tu navegador
-• Puedes exportar respaldos completos
-• Funciona sin conexión a internet
-
-PWA (APP MÓVIL):
-• Instálala desde el menú de tu navegador
-• Funciona en Android, iOS y escritorio
-`;
-
-            alert(helpText);
-        }
 
         // ============================================
         // FIN DEL SISTEMA
