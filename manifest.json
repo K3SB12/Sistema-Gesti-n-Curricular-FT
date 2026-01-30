@@ -1,0 +1,24 @@
+{
+  "name": "Gestión Curricular ICE",
+  "short_name": "ICE Calendar",
+  "description": "Sistema de gestión de tareas para formación tecnológica del ICE",
+  "start_url": "./ice-calendario.html",
+  "display": "standalone",
+  "background_color": "#005CA9",
+  "theme_color": "#005CA9",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "categories": ["education", "productivity"],
+  "lang": "es-CR",
+  "orientation": "portrait"
+}
