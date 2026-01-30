@@ -140,6 +140,26 @@
             width: 1.5rem;
             height: 1.5rem;
         }
+        
+        /* Nuevos estilos para gráficos más pequeños */
+        .small-chart canvas {
+            height: 200px !important;
+        }
+        
+        .small-report-chart canvas {
+            height: 250px !important;
+        }
+        
+        /* Para móviles, aún más pequeños */
+        @media (max-width: 768px) {
+            .small-chart canvas {
+                height: 150px !important;
+            }
+            
+            .small-report-chart canvas {
+                height: 200px !important;
+            }
+        }
     </style>
     
     <!-- PWA Manifest -->
@@ -311,8 +331,8 @@
                         <div class="card-header">
                             <h5 class="mb-0">Distribución de Tareas</h5>
                         </div>
-                        <div class="card-body">
-                            <canvas id="chartTasksDistribution" height="250"></canvas>
+                        <div class="card-body small-chart">
+                            <canvas id="chartTasksDistribution"></canvas>
                         </div>
                     </div>
                 </div>
@@ -322,8 +342,8 @@
                         <div class="card-header">
                             <h5 class="mb-0">Actividad por Mes</h5>
                         </div>
-                        <div class="card-body">
-                            <canvas id="chartMonthlyActivity" height="250"></canvas>
+                        <div class="card-body small-chart">
+                            <canvas id="chartMonthlyActivity"></canvas>
                         </div>
                     </div>
                 </div>
@@ -530,8 +550,8 @@
                         <div class="card-header">
                             <h5 class="mb-0">Reporte de Productividad</h5>
                         </div>
-                        <div class="card-body">
-                            <canvas id="chartProductivity" height="300"></canvas>
+                        <div class="card-body small-report-chart">
+                            <canvas id="chartProductivity"></canvas>
                         </div>
                         <div class="card-footer">
                             <button class="btn btn-sm btn-outline-primary" onclick="generateProductivityReport()">
@@ -546,8 +566,8 @@
                         <div class="card-header">
                             <h5 class="mb-0">Control de Ausencias</h5>
                         </div>
-                        <div class="card-body">
-                            <canvas id="chartAbsences" height="300"></canvas>
+                        <div class="card-body small-report-chart">
+                            <canvas id="chartAbsences"></canvas>
                         </div>
                         <div class="card-footer">
                             <button class="btn btn-sm btn-outline-primary" onclick="generateAbsenceReport()">
@@ -879,7 +899,7 @@
                 <div class="col-md-6">
                     <small class="text-muted">
                         <i class="bi bi-shield-check"></i> Sistema de Gestión Curricular - ICE<br>
-                        <i class="bi bi-calendar-check"></i> Versión 2.0 | Última actualización: <span id="lastUpdate"></span>
+                        <i class="bi bi-calendar-check"></i> Versión 2.1 | Última actualización: <span id="lastUpdate"></span>
                     </small>
                 </div>
                 <div class="col-md-6 text-end">
@@ -898,6 +918,7 @@
     <script>
         // ============================================
         // SISTEMA COMPLETO DE GESTIÓN CURRICULAR ICE
+        // VERSIÓN 2.1 - CON CORRECCIONES IMPLEMENTADAS
         // ============================================
 
         // Variables globales
@@ -1019,7 +1040,7 @@
             ],
             
             calendar: {
-                // Estructura: año -> mes -> asesor -> día -> valor
+                // Estructura: año -> mes -> asesor -> día -> valor (puede ser múltiple separado por comas)
                 2026: {
                     0: {}, // Enero
                     1: {}, // Febrero
@@ -1144,9 +1165,13 @@
         function updateStatistics() {
             // Actualizar contadores
             document.getElementById('statAdvisors').textContent = initialData.advisors.length;
-            document.getElementById('statTasks').textContent = initialData.tasks.length;
+            
+            // Contar solo tareas activas - CORRECCIÓN IMPLEMENTADA
+            const activeTasksCount = initialData.tasks.filter(task => task.active !== false).length;
+            document.getElementById('statTasks').textContent = activeTasksCount;
+            
             document.getElementById('advisorCountBadge').textContent = initialData.advisors.length;
-            document.getElementById('taskCountBadge').textContent = initialData.tasks.length;
+            document.getElementById('taskCountBadge').textContent = activeTasksCount; // Usar contador de activas
             
             // Calcular días de vacaciones
             let vacationDays = 0;
@@ -1154,7 +1179,7 @@
                 const monthData = initialData.calendar[currentYear][currentMonth];
                 Object.values(monthData).forEach(advisorDays => {
                     Object.values(advisorDays).forEach(value => {
-                        if (value === 'V') vacationDays++;
+                        if (value && value.includes('V')) vacationDays++;
                     });
                 });
             }
@@ -1316,7 +1341,7 @@
         }
 
         // ============================================
-        // CALENDARIO
+        // CALENDARIO - CON MÚLTIPLES TAREAS POR DÍA
         // ============================================
 
         function loadCalendar() {
@@ -1368,7 +1393,7 @@
                     ${Array.from({length: daysInMonth}, (_, i) => 
                         `<th class="text-center">${i + 1}<br><small>${getDayName(currentYear, currentMonth, i + 1)}</small></th>`
                     ).join('')}
-                    <th class="text-center">Total</th>
+                    <th class="text-center">Total Tareas</th>
                 </tr>
             `;
             
@@ -1378,7 +1403,7 @@
             
             initialData.advisors.forEach(advisor => {
                 const row = document.createElement('tr');
-                let totalDays = 0;
+                let totalTasks = 0;
                 
                 // Celda del nombre
                 const nameCell = document.createElement('td');
@@ -1394,9 +1419,25 @@
                     // Obtener valor del calendario
                     const value = getCalendarValue(advisor.id, day);
                     if (value) {
-                        cell.classList.add(getCellClassByValue(value));
-                        cell.innerHTML = `<span class="task-code">${value}</span><small class="day-number">${day}</small>`;
-                        totalDays++;
+                        // Obtener todas las clases para múltiples valores
+                        const values = getCalendarValues(advisor.id, day);
+                        values.forEach(val => {
+                            cell.classList.add(getCellClassByValue(val));
+                        });
+                        
+                        // Si hay múltiples valores
+                        if (values.length <= 2) {
+                            cell.innerHTML = values.map(v => `<span class="task-code">${v}</span>`).join('') + 
+                                             `<small class="day-number">${day}</small>`;
+                        } else {
+                            cell.innerHTML = `<span class="task-code">${values[0]}+</span>
+                                              <small class="day-number">${day}</small>
+                                              <span class="badge bg-secondary" style="font-size: 0.5rem; position: absolute; bottom: 1px; right: 1px;">
+                                                +${values.length - 1}
+                                              </span>`;
+                        }
+                        // Contar solo tareas (no ausencias)
+                        totalTasks += values.filter(v => v.startsWith('T')).length;
                     } else {
                         cell.innerHTML = `<small class="day-number">${day}</small>`;
                     }
@@ -1409,7 +1450,7 @@
                 // Celda de total
                 const totalCell = document.createElement('td');
                 totalCell.className = 'text-center fw-bold';
-                totalCell.textContent = totalDays;
+                totalCell.textContent = totalTasks;
                 row.appendChild(totalCell);
                 
                 body.appendChild(row);
@@ -1431,6 +1472,26 @@
             return initialData.calendar[currentYear][currentMonth][advisorId][day] || null;
         }
 
+        // NUEVA FUNCIÓN: Obtener múltiples valores
+        function getCalendarValues(advisorId, day) {
+            if (!initialData.calendar[currentYear] || 
+                !initialData.calendar[currentYear][currentMonth] ||
+                !initialData.calendar[currentYear][currentMonth][advisorId]) {
+                return [];
+            }
+            
+            const value = initialData.calendar[currentYear][currentMonth][advisorId][day];
+            if (!value) return [];
+            
+            // Si es un string con múltiples valores separados por coma
+            if (value.includes(',')) {
+                return value.split(',').map(v => v.trim());
+            }
+            
+            // Si es un solo valor
+            return [value];
+        }
+
         function getCellClassByValue(value) {
             if (value === 'V') return 'cell-vacation';
             if (value === 'P') return 'cell-permission';
@@ -1444,13 +1505,18 @@
                 advisorId: advisor.id,
                 advisorName: advisor.name,
                 day: day,
-                currentValue: getCalendarValue(advisor.id, day)
+                currentValues: getCalendarValues(advisor.id, day) // Cambiar a plural
             };
             
             // Mostrar modal de edición
             document.getElementById('editCellAdvisor').value = advisor.name;
             document.getElementById('editCellDate').value = `${day} de ${getMonthName(currentMonth)} ${currentYear}`;
-            document.getElementById('editCellCurrent').value = currentCellData.currentValue || '(Vacío)';
+            
+            // Mostrar valores actuales (múltiples)
+            const currentValuesText = currentCellData.currentValues.length > 0 
+                ? currentCellData.currentValues.join(', ') 
+                : '(Vacío)';
+            document.getElementById('editCellCurrent').value = currentValuesText;
             
             // Llenar opciones de tareas
             const select = document.getElementById('editCellNewValue');
@@ -1468,8 +1534,16 @@
                 </optgroup>
             `;
             
-            if (currentCellData.currentValue) {
-                select.value = currentCellData.currentValue;
+            // Hacerlo múltiple para permitir selección de varias tareas
+            select.multiple = true;
+            select.size = 6;
+            
+            // Seleccionar valores actuales
+            if (currentCellData.currentValues.length > 0) {
+                currentCellData.currentValues.forEach(value => {
+                    const option = Array.from(select.options).find(opt => opt.value === value);
+                    if (option) option.selected = true;
+                });
             }
             
             // Mostrar modal
@@ -1486,7 +1560,8 @@
         }
 
         function saveCellEdit() {
-            const newValue = document.getElementById('editCellNewValue').value;
+            const select = document.getElementById('editCellNewValue');
+            const selectedValues = Array.from(select.selectedOptions).map(option => option.value);
             const notes = document.getElementById('editCellNotes').value;
             
             if (!currentCellData) return;
@@ -1502,24 +1577,26 @@
                 initialData.calendar[currentYear][currentMonth][currentCellData.advisorId] = {};
             }
             
-            // Guardar valor
-            if (newValue) {
-                initialData.calendar[currentYear][currentMonth][currentCellData.advisorId][currentCellData.day] = newValue;
+            // Guardar valores (unir con comas si hay múltiples)
+            if (selectedValues.length > 0) {
+                initialData.calendar[currentYear][currentMonth][currentCellData.advisorId][currentCellData.day] = 
+                    selectedValues.join(', ');
                 
                 // Registrar notificación
+                const taskDescriptions = selectedValues.map(v => getTaskDescription(v)).join(', ');
                 addNotification(
                     'Calendario Actualizado',
-                    `${currentCellData.advisorName} - Día ${currentCellData.day}: ${getTaskDescription(newValue)}`,
+                    `${currentCellData.advisorName} - Día ${currentCellData.day}: ${taskDescriptions}`,
                     'info'
                 );
-                
-                if (notes) {
-                    console.log(`Notas para ${currentCellData.advisorName} día ${currentCellData.day}: ${notes}`);
-                }
             } else {
-                // Eliminar valor si se seleccionó vacío
+                // Eliminar valor si no hay selecciones
                 delete initialData.calendar[currentYear][currentMonth][currentCellData.advisorId][currentCellData.day];
             }
+            
+            // Reiniciar el select a no múltiple
+            select.multiple = false;
+            select.size = 1;
             
             saveData();
             renderCalendar();
@@ -1527,13 +1604,14 @@
             
             // Cerrar modal
             bootstrap.Modal.getInstance(document.getElementById('editCellModal')).hide();
-            
             showNotification('Éxito', 'Cambios guardados correctamente', 'success');
         }
 
         function clearCellAssignment() {
-            if (confirm('¿Está seguro de que desea limpiar esta asignación?')) {
-                document.getElementById('editCellNewValue').value = '';
+            if (confirm('¿Está seguro de que desea limpiar TODAS las asignaciones de este día?')) {
+                const select = document.getElementById('editCellNewValue');
+                // Deseleccionar todas las opciones
+                Array.from(select.options).forEach(option => option.selected = false);
             }
         }
 
@@ -1596,21 +1674,24 @@
                 for (let i = 1; i <= daysInMonth; i++) {
                     header.push(i.toString());
                 }
-                header.push('Total Días');
+                header.push('Total Tareas');
                 wsData.push(header);
                 
                 // Datos
                 initialData.advisors.forEach(advisor => {
                     const row = [advisor.name];
-                    let totalDays = 0;
+                    let totalTasks = 0;
                     
                     for (let day = 1; day <= daysInMonth; day++) {
                         const value = getCalendarValue(advisor.id, day);
                         row.push(value || '');
-                        if (value) totalDays++;
+                        if (value) {
+                            const values = getCalendarValues(advisor.id, day);
+                            totalTasks += values.filter(v => v.startsWith('T')).length;
+                        }
                     }
                     
-                    row.push(totalDays);
+                    row.push(totalTasks);
                     wsData.push(row);
                 });
                 
@@ -1687,9 +1768,15 @@
             if (!monthData) return 0;
             
             // Contar solo tareas (códigos que empiezan con T)
-            return Object.values(monthData).filter(value => 
-                value && value.startsWith('T')
-            ).length;
+            let count = 0;
+            Object.values(monthData).forEach(value => {
+                if (value) {
+                    const values = value.includes(',') ? value.split(',').map(v => v.trim()) : [value];
+                    count += values.filter(v => v.startsWith('T')).length;
+                }
+            });
+            
+            return count;
         }
 
         function getStatusBadge(status) {
@@ -1852,7 +1939,7 @@
         }
 
         // ============================================
-        // GESTIÓN DE TAREAS
+        // GESTIÓN DE TAREAS - CON ACTUALIZACIÓN DE CONTADORES
         // ============================================
 
         function loadTasks() {
@@ -1901,7 +1988,10 @@
             
             Object.values(monthData).forEach(advisorDays => {
                 Object.values(advisorDays).forEach(value => {
-                    if (value === taskCode) count++;
+                    if (value) {
+                        const values = value.includes(',') ? value.split(',').map(v => v.trim()) : [value];
+                        count += values.filter(v => v === taskCode).length;
+                    }
                 });
             });
             
@@ -2045,6 +2135,7 @@
                 );
             }
             
+            // CORRECCIÓN: Actualizar estadísticas después de guardar
             saveData();
             loadTasks();
             updateStatistics();
@@ -2060,8 +2151,15 @@
                     Object.keys(initialData.calendar[year][month]).forEach(advisorId => {
                         const advisorDays = initialData.calendar[year][month][advisorId];
                         Object.keys(advisorDays).forEach(day => {
-                            if (advisorDays[day] === oldCode) {
-                                advisorDays[day] = newCode;
+                            if (advisorDays[day]) {
+                                // Manejar múltiples valores
+                                if (advisorDays[day].includes(',')) {
+                                    const values = advisorDays[day].split(',').map(v => v.trim());
+                                    const updatedValues = values.map(v => v === oldCode ? newCode : v);
+                                    advisorDays[day] = updatedValues.join(', ');
+                                } else if (advisorDays[day] === oldCode) {
+                                    advisorDays[day] = newCode;
+                                }
                             }
                         });
                     });
@@ -2102,6 +2200,7 @@
                 // Eliminar de la lista
                 initialData.tasks.splice(index, 1);
                 
+                // CORRECCIÓN: Actualizar estadísticas después de eliminar
                 saveData();
                 loadTasks();
                 updateStatistics();
@@ -2133,8 +2232,19 @@
                     Object.keys(initialData.calendar[year][month]).forEach(advisorId => {
                         const advisorDays = initialData.calendar[year][month][advisorId];
                         Object.keys(advisorDays).forEach(day => {
-                            if (advisorDays[day] === taskCode) {
-                                delete advisorDays[day];
+                            if (advisorDays[day]) {
+                                // Manejar múltiples valores
+                                if (advisorDays[day].includes(',')) {
+                                    const values = advisorDays[day].split(',').map(v => v.trim());
+                                    const filteredValues = values.filter(v => v !== taskCode);
+                                    if (filteredValues.length > 0) {
+                                        advisorDays[day] = filteredValues.join(', ');
+                                    } else {
+                                        delete advisorDays[day];
+                                    }
+                                } else if (advisorDays[day] === taskCode) {
+                                    delete advisorDays[day];
+                                }
                             }
                         });
                     });
@@ -2431,411 +2541,412 @@
         }
 
         // ============================================
-// FUNCIONES PWA COMPLETAS
-// ============================================
+        // FUNCIONES PWA COMPLETAS
+        // ============================================
 
-function installPWA() {
-    // Verificar si ya está instalada
-    if (window.matchMedia('(display-mode: standalone)').matches || 
-        window.navigator.standalone === true) {
-        showNotification('Ya instalada', 'La app ya está instalada en tu dispositivo', 'info');
-        return;
-    }
-    
-    // Detectar navegador y mostrar instrucciones
-    let instructions = '';
-    const userAgent = navigator.userAgent.toLowerCase();
-    
-    if (userAgent.includes('chrome')) {
-        instructions = 'Chrome: Haz clic en ⋮ (menú) → "Instalar aplicación"';
-    } else if (userAgent.includes('safari') && !userAgent.includes('chrome')) {
-        instructions = 'Safari: Haz clic en 📤 (compartir) → "Agregar a pantalla de inicio"';
-    } else if (userAgent.includes('firefox')) {
-        instructions = 'Firefox: Haz clic en ⋮ (menú) → "Instalar"';
-    } else if (userAgent.includes('edg')) {
-        instructions = 'Edge: Haz clic en ⋮ (menú) → "Aplicaciones" → "Instalar esta aplicación"';
-    } else {
-        instructions = 'Busca en el menú de tu navegador: "Instalar aplicación" o "Agregar a pantalla de inicio"';
-    }
-    
-    // Mostrar modal con instrucciones
-    const modalHTML = `
-        <div class="modal fade" id="pwaHelpModal">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header bg-primary text-white">
-                        <h5 class="modal-title">
-                            <i class="bi bi-phone"></i> Instalar App Móvil
-                        </h5>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body text-center">
-                        <i class="bi bi-phone" style="font-size: 4rem; color: #005CA9;"></i>
-                        <h4 class="mt-3">Instalar en tu dispositivo</h4>
-                        <p class="lead">${instructions}</p>
-                        
-                        <div class="alert alert-info mt-4">
-                            <i class="bi bi-info-circle"></i>
-                            <strong>Beneficios:</strong>
-                            <ul class="mb-0 mt-2 text-start">
-                                <li>Acceso rápido desde pantalla de inicio</li>
-                                <li>Funciona sin internet</li>
-                                <li>Notificaciones push</li>
-                                <li>Experiencia como app nativa</li>
-                            </ul>
+        function installPWA() {
+            // Verificar si ya está instalada
+            if (window.matchMedia('(display-mode: standalone)').matches || 
+                window.navigator.standalone === true) {
+                showNotification('Ya instalada', 'La app ya está instalada en tu dispositivo', 'info');
+                return;
+            }
+            
+            // Detectar navegador y mostrar instrucciones
+            let instructions = '';
+            const userAgent = navigator.userAgent.toLowerCase();
+            
+            if (userAgent.includes('chrome')) {
+                instructions = 'Chrome: Haz clic en ⋮ (menú) → "Instalar aplicación"';
+            } else if (userAgent.includes('safari') && !userAgent.includes('chrome')) {
+                instructions = 'Safari: Haz clic en 📤 (compartir) → "Agregar a pantalla de inicio"';
+            } else if (userAgent.includes('firefox')) {
+                instructions = 'Firefox: Haz clic en ⋮ (menú) → "Instalar"';
+            } else if (userAgent.includes('edg')) {
+                instructions = 'Edge: Haz clic en ⋮ (menú) → "Aplicaciones" → "Instalar esta aplicación"';
+            } else {
+                instructions = 'Busca en el menú de tu navegador: "Instalar aplicación" o "Agregar a pantalla de inicio"';
+            }
+            
+            // Mostrar modal con instrucciones
+            const modalHTML = `
+                <div class="modal fade" id="pwaHelpModal">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header bg-primary text-white">
+                                <h5 class="modal-title">
+                                    <i class="bi bi-phone"></i> Instalar App Móvil
+                                </h5>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body text-center">
+                                <i class="bi bi-phone" style="font-size: 4rem; color: #005CA9;"></i>
+                                <h4 class="mt-3">Instalar en tu dispositivo</h4>
+                                <p class="lead">${instructions}</p>
+                                
+                                <div class="alert alert-info mt-4">
+                                    <i class="bi bi-info-circle"></i>
+                                    <strong>Beneficios:</strong>
+                                    <ul class="mb-0 mt-2 text-start">
+                                        <li>Acceso rápido desde pantalla de inicio</li>
+                                        <li>Funciona sin internet</li>
+                                        <li>Notificaciones push</li>
+                                        <li>Experiencia como app nativa</li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                                <button type="button" class="btn btn-primary" onclick="checkPWAStatus()">
+                                    Verificar Estado
+                                </button>
+                            </div>
                         </div>
                     </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-                        <button type="button" class="btn btn-primary" onclick="checkPWAStatus()">
-                            Verificar Estado
-                        </button>
-                    </div>
                 </div>
-            </div>
-        </div>
-    `;
-    
-    // Agregar modal si no existe
-    if (!document.getElementById('pwaHelpModal')) {
-        const modalDiv = document.createElement('div');
-        modalDiv.innerHTML = modalHTML;
-        document.body.appendChild(modalDiv);
-    }
-    
-    // Mostrar modal
-    const modal = new bootstrap.Modal(document.getElementById('pwaHelpModal'));
-    modal.show();
-    
-    showNotification('Instalación PWA', instructions, 'info');
-}
-
-function checkPWAStatus() {
-    const status = {
-        isInstalled: window.matchMedia('(display-mode: standalone)').matches || 
-                    window.navigator.standalone === true,
-        hasServiceWorker: 'serviceWorker' in navigator,
-        isOnline: navigator.onLine,
-        storage: localStorage.getItem('ice_calendar_system') ? 'OK' : 'Vacío'
-    };
-    
-    let message = '📱 Estado de la App:\n\n';
-    message += `✅ Instalada: ${status.isInstalled ? 'SÍ' : 'NO (ver instrucciones)'}\n`;
-    message += `✅ Service Worker: ${status.hasServiceWorker ? 'Disponible' : 'No disponible'}\n`;
-    message += `✅ Conexión: ${status.isOnline ? 'En línea' : 'Sin conexión'}\n`;
-    message += `✅ Datos: ${status.storage}\n`;
-    
-    alert(message);
-    
-    // Cerrar modal
-    const modal = bootstrap.Modal.getInstance(document.getElementById('pwaHelpModal'));
-    if (modal) modal.hide();
-}
-
-// ============================================
-// INICIALIZACIÓN DEL SISTEMA
-// ============================================
-
-// Al cargar la página
-document.addEventListener('DOMContentLoaded', function() {
-    // Cargar datos
-    loadData();
-    
-    // Mostrar dashboard inicial
-    showSection('dashboard');
-    
-    // Actualizar fecha de última actualización
-    document.getElementById('lastUpdate').textContent = 
-        new Date().toLocaleDateString('es-CR');
-    
-    // Configurar Service Worker para PWA
-    if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-            navigator.serviceWorker.register('/sw.js')
-                .then(registration => {
-                    console.log('ServiceWorker registrado:', registration);
-                })
-                .catch(error => {
-                    console.log('ServiceWorker registro fallido:', error);
-                });
-        });
-    }
-    
-    // Configurar backup automático cada 24 horas
-    if (initialData.settings.autoBackup) {
-        setInterval(() => {
-            createBackup('auto');
-        }, 24 * 60 * 60 * 1000); // 24 horas
-    }
-    
-    // Mostrar notificación de bienvenida
-    setTimeout(() => {
-        if (initialData.notifications.length === 0) {
-            addNotification(
-                '¡Bienvenido!',
-                'Sistema de Gestión Curricular ICE cargado correctamente',
-                'success'
-            );
+            `;
+            
+            // Agregar modal si no existe
+            if (!document.getElementById('pwaHelpModal')) {
+                const modalDiv = document.createElement('div');
+                modalDiv.innerHTML = modalHTML;
+                document.body.appendChild(modalDiv);
+            }
+            
+            // Mostrar modal
+            const modal = new bootstrap.Modal(document.getElementById('pwaHelpModal'));
+            modal.show();
+            
+            showNotification('Instalación PWA', instructions, 'info');
         }
-    }, 1000);
-    
-    // Verificar si hay solicitudes de apoyo pendientes
-    const pendingRequests = initialData.supportRequests.filter(req => req.status === 'pending').length;
-    if (pendingRequests > 0) {
-        setTimeout(() => {
-            addNotification(
-                'Solicitudes Pendientes',
-                `Tiene ${pendingRequests} solicitud(es) de apoyo pendientes`,
-                'warning'
-            );
-        }, 2000);
-    }
-});
 
-// ============================================
-// FUNCIONES AUXILIARES
-// ============================================
+        function checkPWAStatus() {
+            const status = {
+                isInstalled: window.matchMedia('(display-mode: standalone)').matches || 
+                            window.navigator.standalone === true,
+                hasServiceWorker: 'serviceWorker' in navigator,
+                isOnline: navigator.onLine,
+                storage: localStorage.getItem('ice_calendar_system') ? 'OK' : 'Vacío'
+            };
+            
+            let message = '📱 Estado de la App:\n\n';
+            message += `✅ Instalada: ${status.isInstalled ? 'SÍ' : 'NO (ver instrucciones)'}\n`;
+            message += `✅ Service Worker: ${status.hasServiceWorker ? 'Disponible' : 'No disponible'}\n`;
+            message += `✅ Conexión: ${status.isOnline ? 'En línea' : 'Sin conexión'}\n`;
+            message += `✅ Datos: ${status.storage}\n`;
+            
+            alert(message);
+            
+            // Cerrar modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('pwaHelpModal'));
+            if (modal) modal.hide();
+        }
 
-// Detectar si la app está instalada como PWA
-function isRunningAsPWA() {
-    return window.matchMedia('(display-mode: standalone)').matches || 
-           window.navigator.standalone === true;
-}
+        // ============================================
+        // INICIALIZACIÓN DEL SISTEMA
+        // ============================================
 
-// Función para copiar al portapapeles
-function copyToClipboard(text) {
-    navigator.clipboard.writeText(text)
-        .then(() => showNotification('Copiado', 'Texto copiado al portapapeles', 'success'))
-        .catch(err => console.error('Error al copiar:', err));
-}
-
-// Formatear fecha
-function formatDate(date) {
-    return new Date(date).toLocaleDateString('es-CR', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-    });
-}
-
-// Generar ID único
-function generateId() {
-    return Date.now().toString(36) + Math.random().toString(36).substr(2);
-}
-
-// Validar email
-function isValidEmail(email) {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-}
-
-// Exportar todo el sistema a Excel
-function exportFullSystemToExcel() {
-    try {
-        const wb = XLSX.utils.book_new();
-        
-        // Hoja 1: Asesores
-        const advisorsData = initialData.advisors.map(advisor => ({
-            'ID': advisor.id,
-            'Nombre': advisor.name,
-            'Email': advisor.email,
-            'Teléfono': advisor.phone,
-            'Especialidad': advisor.specialty,
-            'Estado': advisor.status,
-            'Notificaciones': advisor.notifications ? 'Sí' : 'No',
-            'Creado': formatDate(advisor.created)
-        }));
-        const ws1 = XLSX.utils.json_to_sheet(advisorsData);
-        XLSX.utils.book_append_sheet(wb, ws1, 'Asesores');
-        
-        // Hoja 2: Tareas
-        const tasksData = initialData.tasks.map(task => ({
-            'Código': task.code,
-            'Descripción': task.description,
-            'Tipo': task.type,
-            'Proyecto': task.project,
-            'Tiempo Estimado (h)': task.estimatedTime,
-            'Dificultad': task.difficulty,
-            'Activa': task.active ? 'Sí' : 'No'
-        }));
-        const ws2 = XLSX.utils.json_to_sheet(tasksData);
-        XLSX.utils.book_append_sheet(wb, ws2, 'Tareas');
-        
-        // Hoja 3: Calendario actual
-        const monthName = getMonthName(currentMonth);
-        const ws3Data = [['Calendario', monthName, currentYear]];
-        ws3Data.push(['Asesor', ...Array.from({length: 31}, (_, i) => i + 1)]);
-        
-        initialData.advisors.forEach(advisor => {
-            const row = [advisor.name];
-            for (let day = 1; day <= 31; day++) {
-                row.push(getCalendarValue(advisor.id, day) || '');
+        // Al cargar la página
+        document.addEventListener('DOMContentLoaded', function() {
+            // Cargar datos
+            loadData();
+            
+            // Mostrar dashboard inicial
+            showSection('dashboard');
+            
+            // Actualizar fecha de última actualización
+            document.getElementById('lastUpdate').textContent = 
+                new Date().toLocaleDateString('es-CR');
+            
+            // Configurar Service Worker para PWA
+            if ('serviceWorker' in navigator) {
+                window.addEventListener('load', () => {
+                    navigator.serviceWorker.register('/sw.js')
+                        .then(registration => {
+                            console.log('ServiceWorker registrado:', registration);
+                        })
+                        .catch(error => {
+                            console.log('ServiceWorker registro fallido:', error);
+                        });
+                });
             }
-            ws3Data.push(row);
+            
+            // Configurar backup automático cada 24 horas
+            if (initialData.settings.autoBackup) {
+                setInterval(() => {
+                    createBackup('auto');
+                }, 24 * 60 * 60 * 1000); // 24 horas
+            }
+            
+            // Mostrar notificación de bienvenida
+            setTimeout(() => {
+                if (initialData.notifications.length === 0) {
+                    addNotification(
+                        '¡Bienvenido!',
+                        'Sistema de Gestión Curricular ICE cargado correctamente',
+                        'success'
+                    );
+                }
+            }, 1000);
+            
+            // Verificar si hay solicitudes de apoyo pendientes
+            const pendingRequests = initialData.supportRequests.filter(req => req.status === 'pending').length;
+            if (pendingRequests > 0) {
+                setTimeout(() => {
+                    addNotification(
+                        'Solicitudes Pendientes',
+                        `Tiene ${pendingRequests} solicitud(es) de apoyo pendientes`,
+                        'warning'
+                    );
+                }, 2000);
+            }
         });
-        
-        const ws3 = XLSX.utils.aoa_to_sheet(ws3Data);
-        XLSX.utils.book_append_sheet(wb, ws3, 'Calendario');
-        
-        // Descargar
-        const fileName = `Sistema_ICE_Completo_${new Date().toISOString().split('T')[0]}.xlsx`;
-        XLSX.writeFile(wb, fileName);
-        
-        addNotification(
-            'Exportación Completa',
-            `Sistema exportado a ${fileName}`,
-            'success'
-        );
-    } catch (error) {
-        console.error('Error al exportar:', error);
-        showNotification('Error', 'No se pudo exportar el sistema completo', 'error');
-    }
-}
 
-// Importar desde Excel existente
-function importFromExcel() {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.xlsx,.xls';
-    
-    input.onchange = e => {
-        const file = e.target.files[0];
-        if (!file) return;
-        
-        const reader = new FileReader();
-        reader.onload = event => {
+        // ============================================
+        // FUNCIONES AUXILIARES
+        // ============================================
+
+        // Detectar si la app está instalada como PWA
+        function isRunningAsPWA() {
+            return window.matchMedia('(display-mode: standalone)').matches || 
+                   window.navigator.standalone === true;
+        }
+
+        // Función para copiar al portapapeles
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text)
+                .then(() => showNotification('Copiado', 'Texto copiado al portapapeles', 'success'))
+                .catch(err => console.error('Error al copiar:', err));
+        }
+
+        // Formatear fecha
+        function formatDate(date) {
+            return new Date(date).toLocaleDateString('es-CR', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+        }
+
+        // Generar ID único
+        function generateId() {
+            return Date.now().toString(36) + Math.random().toString(36).substr(2);
+        }
+
+        // Validar email
+        function isValidEmail(email) {
+            return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+        }
+
+        // Exportar todo el sistema a Excel
+        function exportFullSystemToExcel() {
             try {
-                const data = new Uint8Array(event.target.result);
-                const workbook = XLSX.read(data, {type: 'array'});
+                const wb = XLSX.utils.book_new();
                 
-                // Procesar hojas
-                workbook.SheetNames.forEach(sheetName => {
-                    const worksheet = workbook.Sheets[sheetName];
-                    const jsonData = XLSX.utils.sheet_to_json(worksheet);
-                    
-                    console.log(`Procesando hoja: ${sheetName}`, jsonData);
-                    // Aquí implementarías la lógica de importación específica
+                // Hoja 1: Asesores
+                const advisorsData = initialData.advisors.map(advisor => ({
+                    'ID': advisor.id,
+                    'Nombre': advisor.name,
+                    'Email': advisor.email,
+                    'Teléfono': advisor.phone,
+                    'Especialidad': advisor.specialty,
+                    'Estado': advisor.status,
+                    'Notificaciones': advisor.notifications ? 'Sí' : 'No',
+                    'Creado': formatDate(advisor.created)
+                }));
+                const ws1 = XLSX.utils.json_to_sheet(advisorsData);
+                XLSX.utils.book_append_sheet(wb, ws1, 'Asesores');
+                
+                // Hoja 2: Tareas
+                const tasksData = initialData.tasks.map(task => ({
+                    'Código': task.code,
+                    'Descripción': task.description,
+                    'Tipo': task.type,
+                    'Proyecto': task.project,
+                    'Tiempo Estimado (h)': task.estimatedTime,
+                    'Dificultad': task.difficulty,
+                    'Activa': task.active ? 'Sí' : 'No'
+                }));
+                const ws2 = XLSX.utils.json_to_sheet(tasksData);
+                XLSX.utils.book_append_sheet(wb, ws2, 'Tareas');
+                
+                // Hoja 3: Calendario actual
+                const monthName = getMonthName(currentMonth);
+                const ws3Data = [['Calendario', monthName, currentYear]];
+                ws3Data.push(['Asesor', ...Array.from({length: 31}, (_, i) => i + 1)]);
+                
+                initialData.advisors.forEach(advisor => {
+                    const row = [advisor.name];
+                    for (let day = 1; day <= 31; day++) {
+                        row.push(getCalendarValue(advisor.id, day) || '');
+                    }
+                    ws3Data.push(row);
                 });
                 
-                showNotification('Importación', 'Archivo Excel procesado. Revise la consola para ver los datos.', 'info');
+                const ws3 = XLSX.utils.aoa_to_sheet(ws3Data);
+                XLSX.utils.book_append_sheet(wb, ws3, 'Calendario');
+                
+                // Descargar
+                const fileName = `Sistema_ICE_Completo_${new Date().toISOString().split('T')[0]}.xlsx`;
+                XLSX.writeFile(wb, fileName);
+                
+                addNotification(
+                    'Exportación Completa',
+                    `Sistema exportado a ${fileName}`,
+                    'success'
+                );
             } catch (error) {
-                console.error('Error al importar Excel:', error);
-                showNotification('Error', 'No se pudo procesar el archivo Excel', 'error');
+                console.error('Error al exportar:', error);
+                showNotification('Error', 'No se pudo exportar el sistema completo', 'error');
             }
-        };
-        
-        reader.readAsArrayBuffer(file);
-    };
-    
-    input.click();
-}
+        }
 
-// Buscar en todo el sistema
-function searchSystem(query) {
-    if (!query.trim()) return;
-    
-    const results = {
-        advisors: [],
-        tasks: [],
-        calendar: []
-    };
-    
-    // Buscar en asesores
-    results.advisors = initialData.advisors.filter(advisor => 
-        advisor.name.toLowerCase().includes(query.toLowerCase()) ||
-        advisor.email.toLowerCase().includes(query.toLowerCase())
-    );
-    
-    // Buscar en tareas
-    results.tasks = initialData.tasks.filter(task => 
-        task.code.toLowerCase().includes(query.toLowerCase()) ||
-        task.description.toLowerCase().includes(query.toLowerCase())
-    );
-    
-    // Buscar en calendario
-    if (initialData.calendar[currentYear] && initialData.calendar[currentYear][currentMonth]) {
-        const monthData = initialData.calendar[currentYear][currentMonth];
-        Object.keys(monthData).forEach(advisorId => {
-            const advisorDays = monthData[advisorId];
-            Object.keys(advisorDays).forEach(day => {
-                if (advisorDays[day].toLowerCase().includes(query.toLowerCase())) {
-                    const advisor = initialData.advisors.find(a => a.id === parseInt(advisorId));
-                    if (advisor) {
-                        results.calendar.push({
-                            advisor: advisor.name,
-                            day: parseInt(day),
-                            value: advisorDays[day]
+        // Importar desde Excel existente
+        function importFromExcel() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.xlsx,.xls';
+            
+            input.onchange = e => {
+                const file = e.target.files[0];
+                if (!file) return;
+                
+                const reader = new FileReader();
+                reader.onload = event => {
+                    try {
+                        const data = new Uint8Array(event.target.result);
+                        const workbook = XLSX.read(data, {type: 'array'});
+                        
+                        // Procesar hojas
+                        workbook.SheetNames.forEach(sheetName => {
+                            const worksheet = workbook.Sheets[sheetName];
+                            const jsonData = XLSX.utils.sheet_to_json(worksheet);
+                            
+                            console.log(`Procesando hoja: ${sheetName}`, jsonData);
+                            // Aquí implementarías la lógica de importación específica
                         });
+                        
+                        showNotification('Importación', 'Archivo Excel procesado. Revise la consola para ver los datos.', 'info');
+                    } catch (error) {
+                        console.error('Error al importar Excel:', error);
+                        showNotification('Error', 'No se pudo procesar el archivo Excel', 'error');
                     }
-                }
-            });
+                };
+                
+                reader.readAsArrayBuffer(file);
+            };
+            
+            input.click();
+        }
+
+        // Buscar en todo el sistema
+        function searchSystem(query) {
+            if (!query.trim()) return;
+            
+            const results = {
+                advisors: [],
+                tasks: [],
+                calendar: []
+            };
+            
+            // Buscar en asesores
+            results.advisors = initialData.advisors.filter(advisor => 
+                advisor.name.toLowerCase().includes(query.toLowerCase()) ||
+                advisor.email.toLowerCase().includes(query.toLowerCase())
+            );
+            
+            // Buscar en tareas
+            results.tasks = initialData.tasks.filter(task => 
+                task.code.toLowerCase().includes(query.toLowerCase()) ||
+                task.description.toLowerCase().includes(query.toLowerCase())
+            );
+            
+            // Buscar en calendario
+            if (initialData.calendar[currentYear] && initialData.calendar[currentYear][currentMonth]) {
+                const monthData = initialData.calendar[currentYear][currentMonth];
+                Object.keys(monthData).forEach(advisorId => {
+                    const advisorDays = monthData[advisorId];
+                    Object.keys(advisorDays).forEach(day => {
+                        if (advisorDays[day].toLowerCase().includes(query.toLowerCase())) {
+                            const advisor = initialData.advisors.find(a => a.id === parseInt(advisorId));
+                            if (advisor) {
+                                results.calendar.push({
+                                    advisor: advisor.name,
+                                    day: parseInt(day),
+                                    value: advisorDays[day]
+                                });
+                            }
+                        }
+                    });
+                });
+            }
+            
+            // Mostrar resultados
+            let message = `Resultados para "${query}":\n\n`;
+            if (results.advisors.length > 0) {
+                message += `Asesores (${results.advisors.length}):\n`;
+                results.advisors.forEach(a => message += `• ${a.name}\n`);
+                message += '\n';
+            }
+            
+            if (results.tasks.length > 0) {
+                message += `Tareas (${results.tasks.length}):\n`;
+                results.tasks.forEach(t => message += `• ${t.code}: ${t.description}\n`);
+                message += '\n';
+            }
+            
+            if (results.calendar.length > 0) {
+                message += `En calendario (${results.calendar.length}):\n`;
+                results.calendar.forEach(c => 
+                    message += `• ${c.advisor} - Día ${c.day}: ${c.value}\n`
+                );
+            }
+            
+            if (results.advisors.length === 0 && results.tasks.length === 0 && results.calendar.length === 0) {
+                message = `No se encontraron resultados para "${query}"`;
+            }
+            
+            alert(message);
+        }
+
+        // Configurar atajos de teclado
+        document.addEventListener('keydown', function(e) {
+            // Ctrl + S: Guardar
+            if (e.ctrlKey && e.key === 's') {
+                e.preventDefault();
+                saveData();
+                showNotification('Guardado', 'Datos guardados correctamente', 'success');
+            }
+            
+            // Ctrl + E: Exportar
+            if (e.ctrlKey && e.key === 'e') {
+                e.preventDefault();
+                exportCalendarToExcel();
+            }
+            
+            // Ctrl + N: Nuevo asesor
+            if (e.ctrlKey && e.key === 'n') {
+                e.preventDefault();
+                showAdvisorModal('new');
+            }
+            
+            // Ctrl + T: Nueva tarea
+            if (e.ctrlKey && e.key === 't') {
+                e.preventDefault();
+                showTaskModal('new');
+            }
+            
+            // F1: Ayuda
+            if (e.key === 'F1') {
+                e.preventDefault();
+                showHelp();
+            }
         });
-    }
-    
-    // Mostrar resultados
-    let message = `Resultados para "${query}":\n\n`;
-    if (results.advisors.length > 0) {
-        message += `Asesores (${results.advisors.length}):\n`;
-        results.advisors.forEach(a => message += `• ${a.name}\n`);
-        message += '\n';
-    }
-    
-    if (results.tasks.length > 0) {
-        message += `Tareas (${results.tasks.length}):\n`;
-        results.tasks.forEach(t => message += `• ${t.code}: ${t.description}\n`);
-        message += '\n';
-    }
-    
-    if (results.calendar.length > 0) {
-        message += `En calendario (${results.calendar.length}):\n`;
-        results.calendar.forEach(c => 
-            message += `• ${c.advisor} - Día ${c.day}: ${c.value}\n`
-        );
-    }
-    
-    if (results.advisors.length === 0 && results.tasks.length === 0 && results.calendar.length === 0) {
-        message = `No se encontraron resultados para "${query}"`;
-    }
-    
-    alert(message);
-}
 
-// Configurar atajos de teclado
-document.addEventListener('keydown', function(e) {
-    // Ctrl + S: Guardar
-    if (e.ctrlKey && e.key === 's') {
-        e.preventDefault();
-        saveData();
-        showNotification('Guardado', 'Datos guardados correctamente', 'success');
-    }
-    
-    // Ctrl + E: Exportar
-    if (e.ctrlKey && e.key === 'e') {
-        e.preventDefault();
-        exportCalendarToExcel();
-    }
-    
-    // Ctrl + N: Nuevo asesor
-    if (e.ctrlKey && e.key === 'n') {
-        e.preventDefault();
-        showAdvisorModal('new');
-    }
-    
-    // Ctrl + T: Nueva tarea
-    if (e.ctrlKey && e.key === 't') {
-        e.preventDefault();
-        showTaskModal('new');
-    }
-    
-    // F1: Ayuda
-    if (e.key === 'F1') {
-        e.preventDefault();
-        showHelp();
-    }
-});
-
-function showHelp() {
-    const helpText = `
+        function showHelp() {
+            const helpText = `
 SISTEMA DE GESTIÓN CURRICULAR ICE - AYUDAS
+VERSIÓN 2.1 - CON MÚLTIPLES TAREAS POR DÍA
 
 ATAJOS DE TECLADO:
 • Ctrl + S: Guardar datos
@@ -2846,10 +2957,18 @@ ATAJOS DE TECLADO:
 
 FUNCIONALIDADES PRINCIPALES:
 1. Calendario: Click en cualquier celda para editar
+   • Ahora permite asignar MÚLTIPLES tareas por día
+   • Mantén Ctrl/Cmd click para seleccionar varias tareas
 2. Asesores: Agregar, editar o eliminar
 3. Tareas: Catálogo completo de tareas disponibles
 4. Reportes: Estadísticas y análisis
 5. Notificaciones: Sistema de alertas
+
+NUEVAS FUNCIONALIDADES:
+• Múltiples tareas por día por asesor
+• Contadores automáticos actualizados
+• Gráficos optimizados para pantallas pequeñas
+• Mejora en la experiencia de usuario
 
 ALMACENAMIENTO:
 • Los datos se guardan automáticamente en tu navegador
@@ -2861,12 +2980,12 @@ PWA (APP MÓVIL):
 • Funciona en Android, iOS y escritorio
 `;
 
-    alert(helpText);
-}
+            alert(helpText);
+        }
 
-// ============================================
-// FIN DEL SISTEMA
-// ============================================
-            </script>
+        // ============================================
+        // FIN DEL SISTEMA
+        // ============================================
+    </script>
 </body>
 </html>
