@@ -2430,319 +2430,411 @@
             }
         }
 
-                            // Funcionalidad PWA básica
-                    if ('serviceWorker' in navigator) {
-                        navigator.serviceWorker.register('/sw.js')
-                            .then(() => console.log('Service Worker registrado'))
-                            .catch(err => console.log('Error SW:', err));
-                    }
-                    
-                    showNotification('PWA', 'Use el menú de su navegador para "Instalar aplicación" o "Agregar a pantalla de inicio"', 'info');
-                }
+        // ============================================
+// FUNCIONES PWA COMPLETAS
+// ============================================
 
-                // ============================================
-                // INICIALIZACIÓN DEL SISTEMA
-                // ============================================
+function installPWA() {
+    // Verificar si ya está instalada
+    if (window.matchMedia('(display-mode: standalone)').matches || 
+        window.navigator.standalone === true) {
+        showNotification('Ya instalada', 'La app ya está instalada en tu dispositivo', 'info');
+        return;
+    }
+    
+    // Detectar navegador y mostrar instrucciones
+    let instructions = '';
+    const userAgent = navigator.userAgent.toLowerCase();
+    
+    if (userAgent.includes('chrome')) {
+        instructions = 'Chrome: Haz clic en ⋮ (menú) → "Instalar aplicación"';
+    } else if (userAgent.includes('safari') && !userAgent.includes('chrome')) {
+        instructions = 'Safari: Haz clic en 📤 (compartir) → "Agregar a pantalla de inicio"';
+    } else if (userAgent.includes('firefox')) {
+        instructions = 'Firefox: Haz clic en ⋮ (menú) → "Instalar"';
+    } else if (userAgent.includes('edg')) {
+        instructions = 'Edge: Haz clic en ⋮ (menú) → "Aplicaciones" → "Instalar esta aplicación"';
+    } else {
+        instructions = 'Busca en el menú de tu navegador: "Instalar aplicación" o "Agregar a pantalla de inicio"';
+    }
+    
+    // Mostrar modal con instrucciones
+    const modalHTML = `
+        <div class="modal fade" id="pwaHelpModal">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header bg-primary text-white">
+                        <h5 class="modal-title">
+                            <i class="bi bi-phone"></i> Instalar App Móvil
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body text-center">
+                        <i class="bi bi-phone" style="font-size: 4rem; color: #005CA9;"></i>
+                        <h4 class="mt-3">Instalar en tu dispositivo</h4>
+                        <p class="lead">${instructions}</p>
+                        
+                        <div class="alert alert-info mt-4">
+                            <i class="bi bi-info-circle"></i>
+                            <strong>Beneficios:</strong>
+                            <ul class="mb-0 mt-2 text-start">
+                                <li>Acceso rápido desde pantalla de inicio</li>
+                                <li>Funciona sin internet</li>
+                                <li>Notificaciones push</li>
+                                <li>Experiencia como app nativa</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                        <button type="button" class="btn btn-primary" onclick="checkPWAStatus()">
+                            Verificar Estado
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Agregar modal si no existe
+    if (!document.getElementById('pwaHelpModal')) {
+        const modalDiv = document.createElement('div');
+        modalDiv.innerHTML = modalHTML;
+        document.body.appendChild(modalDiv);
+    }
+    
+    // Mostrar modal
+    const modal = new bootstrap.Modal(document.getElementById('pwaHelpModal'));
+    modal.show();
+    
+    showNotification('Instalación PWA', instructions, 'info');
+}
 
-                // Al cargar la página
-                document.addEventListener('DOMContentLoaded', function() {
-                    // Cargar datos
-                    loadData();
-                    
-                    // Mostrar dashboard inicial
-                    showSection('dashboard');
-                    
-                    // Actualizar fecha de última actualización
-                    document.getElementById('lastUpdate').textContent = 
-                        new Date().toLocaleDateString('es-CR');
-                    
-                    // Configurar Service Worker para PWA
-                    if ('serviceWorker' in navigator) {
-                        window.addEventListener('load', () => {
-                            navigator.serviceWorker.register('/sw.js')
-                                .then(registration => {
-                                    console.log('ServiceWorker registrado:', registration);
-                                })
-                                .catch(error => {
-                                    console.log('ServiceWorker registro fallido:', error);
-                                });
-                        });
-                    }
-                    
-                    // Configurar backup automático cada 24 horas
-                    if (initialData.settings.autoBackup) {
-                        setInterval(() => {
-                            createBackup('auto');
-                        }, 24 * 60 * 60 * 1000); // 24 horas
-                    }
-                    
-                    // Mostrar notificación de bienvenida
-                    setTimeout(() => {
-                        if (initialData.notifications.length === 0) {
-                            addNotification(
-                                '¡Bienvenido!',
-                                'Sistema de Gestión Curricular ICE cargado correctamente',
-                                'success'
-                            );
-                        }
-                    }, 1000);
-                    
-                    // Verificar si hay solicitudes de apoyo pendientes
-                    const pendingRequests = initialData.supportRequests.filter(req => req.status === 'pending').length;
-                    if (pendingRequests > 0) {
-                        setTimeout(() => {
-                            addNotification(
-                                'Solicitudes Pendientes',
-                                `Tiene ${pendingRequests} solicitud(es) de apoyo pendientes`,
-                                'warning'
-                            );
-                        }, 2000);
-                    }
+function checkPWAStatus() {
+    const status = {
+        isInstalled: window.matchMedia('(display-mode: standalone)').matches || 
+                    window.navigator.standalone === true,
+        hasServiceWorker: 'serviceWorker' in navigator,
+        isOnline: navigator.onLine,
+        storage: localStorage.getItem('ice_calendar_system') ? 'OK' : 'Vacío'
+    };
+    
+    let message = '📱 Estado de la App:\n\n';
+    message += `✅ Instalada: ${status.isInstalled ? 'SÍ' : 'NO (ver instrucciones)'}\n`;
+    message += `✅ Service Worker: ${status.hasServiceWorker ? 'Disponible' : 'No disponible'}\n`;
+    message += `✅ Conexión: ${status.isOnline ? 'En línea' : 'Sin conexión'}\n`;
+    message += `✅ Datos: ${status.storage}\n`;
+    
+    alert(message);
+    
+    // Cerrar modal
+    const modal = bootstrap.Modal.getInstance(document.getElementById('pwaHelpModal'));
+    if (modal) modal.hide();
+}
+
+// ============================================
+// INICIALIZACIÓN DEL SISTEMA
+// ============================================
+
+// Al cargar la página
+document.addEventListener('DOMContentLoaded', function() {
+    // Cargar datos
+    loadData();
+    
+    // Mostrar dashboard inicial
+    showSection('dashboard');
+    
+    // Actualizar fecha de última actualización
+    document.getElementById('lastUpdate').textContent = 
+        new Date().toLocaleDateString('es-CR');
+    
+    // Configurar Service Worker para PWA
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('/sw.js')
+                .then(registration => {
+                    console.log('ServiceWorker registrado:', registration);
+                })
+                .catch(error => {
+                    console.log('ServiceWorker registro fallido:', error);
                 });
+        });
+    }
+    
+    // Configurar backup automático cada 24 horas
+    if (initialData.settings.autoBackup) {
+        setInterval(() => {
+            createBackup('auto');
+        }, 24 * 60 * 60 * 1000); // 24 horas
+    }
+    
+    // Mostrar notificación de bienvenida
+    setTimeout(() => {
+        if (initialData.notifications.length === 0) {
+            addNotification(
+                '¡Bienvenido!',
+                'Sistema de Gestión Curricular ICE cargado correctamente',
+                'success'
+            );
+        }
+    }, 1000);
+    
+    // Verificar si hay solicitudes de apoyo pendientes
+    const pendingRequests = initialData.supportRequests.filter(req => req.status === 'pending').length;
+    if (pendingRequests > 0) {
+        setTimeout(() => {
+            addNotification(
+                'Solicitudes Pendientes',
+                `Tiene ${pendingRequests} solicitud(es) de apoyo pendientes`,
+                'warning'
+            );
+        }, 2000);
+    }
+});
 
-                // ============================================
-                // FUNCIONES AUXILIARES
-                // ============================================
+// ============================================
+// FUNCIONES AUXILIARES
+// ============================================
 
-                // Detectar si la app está instalada como PWA
-                function isRunningAsPWA() {
-                    return window.matchMedia('(display-mode: standalone)').matches || 
-                           window.navigator.standalone === true;
-                }
+// Detectar si la app está instalada como PWA
+function isRunningAsPWA() {
+    return window.matchMedia('(display-mode: standalone)').matches || 
+           window.navigator.standalone === true;
+}
 
-                // Función para copiar al portapapeles
-                function copyToClipboard(text) {
-                    navigator.clipboard.writeText(text)
-                        .then(() => showNotification('Copiado', 'Texto copiado al portapapeles', 'success'))
-                        .catch(err => console.error('Error al copiar:', err));
-                }
+// Función para copiar al portapapeles
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text)
+        .then(() => showNotification('Copiado', 'Texto copiado al portapapeles', 'success'))
+        .catch(err => console.error('Error al copiar:', err));
+}
 
-                // Formatear fecha
-                function formatDate(date) {
-                    return new Date(date).toLocaleDateString('es-CR', {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric'
-                    });
-                }
+// Formatear fecha
+function formatDate(date) {
+    return new Date(date).toLocaleDateString('es-CR', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+    });
+}
 
-                // Generar ID único
-                function generateId() {
-                    return Date.now().toString(36) + Math.random().toString(36).substr(2);
-                }
+// Generar ID único
+function generateId() {
+    return Date.now().toString(36) + Math.random().toString(36).substr(2);
+}
 
-                // Validar email
-                function isValidEmail(email) {
-                    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-                }
+// Validar email
+function isValidEmail(email) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
 
-                // Exportar todo el sistema a Excel
-                function exportFullSystemToExcel() {
-                    try {
-                        const wb = XLSX.utils.book_new();
-                        
-                        // Hoja 1: Asesores
-                        const advisorsData = initialData.advisors.map(advisor => ({
-                            'ID': advisor.id,
-                            'Nombre': advisor.name,
-                            'Email': advisor.email,
-                            'Teléfono': advisor.phone,
-                            'Especialidad': advisor.specialty,
-                            'Estado': advisor.status,
-                            'Notificaciones': advisor.notifications ? 'Sí' : 'No',
-                            'Creado': formatDate(advisor.created)
-                        }));
-                        const ws1 = XLSX.utils.json_to_sheet(advisorsData);
-                        XLSX.utils.book_append_sheet(wb, ws1, 'Asesores');
-                        
-                        // Hoja 2: Tareas
-                        const tasksData = initialData.tasks.map(task => ({
-                            'Código': task.code,
-                            'Descripción': task.description,
-                            'Tipo': task.type,
-                            'Proyecto': task.project,
-                            'Tiempo Estimado (h)': task.estimatedTime,
-                            'Dificultad': task.difficulty,
-                            'Activa': task.active ? 'Sí' : 'No'
-                        }));
-                        const ws2 = XLSX.utils.json_to_sheet(tasksData);
-                        XLSX.utils.book_append_sheet(wb, ws2, 'Tareas');
-                        
-                        // Hoja 3: Calendario actual
-                        const monthName = getMonthName(currentMonth);
-                        const ws3Data = [['Calendario', monthName, currentYear]];
-                        ws3Data.push(['Asesor', ...Array.from({length: 31}, (_, i) => i + 1)]);
-                        
-                        initialData.advisors.forEach(advisor => {
-                            const row = [advisor.name];
-                            for (let day = 1; day <= 31; day++) {
-                                row.push(getCalendarValue(advisor.id, day) || '');
-                            }
-                            ws3Data.push(row);
-                        });
-                        
-                        const ws3 = XLSX.utils.aoa_to_sheet(ws3Data);
-                        XLSX.utils.book_append_sheet(wb, ws3, 'Calendario');
-                        
-                        // Descargar
-                        const fileName = `Sistema_ICE_Completo_${new Date().toISOString().split('T')[0]}.xlsx`;
-                        XLSX.writeFile(wb, fileName);
-                        
-                        addNotification(
-                            'Exportación Completa',
-                            `Sistema exportado a ${fileName}`,
-                            'success'
-                        );
-                    } catch (error) {
-                        console.error('Error al exportar:', error);
-                        showNotification('Error', 'No se pudo exportar el sistema completo', 'error');
-                    }
-                }
+// Exportar todo el sistema a Excel
+function exportFullSystemToExcel() {
+    try {
+        const wb = XLSX.utils.book_new();
+        
+        // Hoja 1: Asesores
+        const advisorsData = initialData.advisors.map(advisor => ({
+            'ID': advisor.id,
+            'Nombre': advisor.name,
+            'Email': advisor.email,
+            'Teléfono': advisor.phone,
+            'Especialidad': advisor.specialty,
+            'Estado': advisor.status,
+            'Notificaciones': advisor.notifications ? 'Sí' : 'No',
+            'Creado': formatDate(advisor.created)
+        }));
+        const ws1 = XLSX.utils.json_to_sheet(advisorsData);
+        XLSX.utils.book_append_sheet(wb, ws1, 'Asesores');
+        
+        // Hoja 2: Tareas
+        const tasksData = initialData.tasks.map(task => ({
+            'Código': task.code,
+            'Descripción': task.description,
+            'Tipo': task.type,
+            'Proyecto': task.project,
+            'Tiempo Estimado (h)': task.estimatedTime,
+            'Dificultad': task.difficulty,
+            'Activa': task.active ? 'Sí' : 'No'
+        }));
+        const ws2 = XLSX.utils.json_to_sheet(tasksData);
+        XLSX.utils.book_append_sheet(wb, ws2, 'Tareas');
+        
+        // Hoja 3: Calendario actual
+        const monthName = getMonthName(currentMonth);
+        const ws3Data = [['Calendario', monthName, currentYear]];
+        ws3Data.push(['Asesor', ...Array.from({length: 31}, (_, i) => i + 1)]);
+        
+        initialData.advisors.forEach(advisor => {
+            const row = [advisor.name];
+            for (let day = 1; day <= 31; day++) {
+                row.push(getCalendarValue(advisor.id, day) || '');
+            }
+            ws3Data.push(row);
+        });
+        
+        const ws3 = XLSX.utils.aoa_to_sheet(ws3Data);
+        XLSX.utils.book_append_sheet(wb, ws3, 'Calendario');
+        
+        // Descargar
+        const fileName = `Sistema_ICE_Completo_${new Date().toISOString().split('T')[0]}.xlsx`;
+        XLSX.writeFile(wb, fileName);
+        
+        addNotification(
+            'Exportación Completa',
+            `Sistema exportado a ${fileName}`,
+            'success'
+        );
+    } catch (error) {
+        console.error('Error al exportar:', error);
+        showNotification('Error', 'No se pudo exportar el sistema completo', 'error');
+    }
+}
 
-                // Importar desde Excel existente
-                function importFromExcel() {
-                    const input = document.createElement('input');
-                    input.type = 'file';
-                    input.accept = '.xlsx,.xls';
+// Importar desde Excel existente
+function importFromExcel() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.xlsx,.xls';
+    
+    input.onchange = e => {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        const reader = new FileReader();
+        reader.onload = event => {
+            try {
+                const data = new Uint8Array(event.target.result);
+                const workbook = XLSX.read(data, {type: 'array'});
+                
+                // Procesar hojas
+                workbook.SheetNames.forEach(sheetName => {
+                    const worksheet = workbook.Sheets[sheetName];
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet);
                     
-                    input.onchange = e => {
-                        const file = e.target.files[0];
-                        if (!file) return;
-                        
-                        const reader = new FileReader();
-                        reader.onload = event => {
-                            try {
-                                const data = new Uint8Array(event.target.result);
-                                const workbook = XLSX.read(data, {type: 'array'});
-                                
-                                // Procesar hojas
-                                workbook.SheetNames.forEach(sheetName => {
-                                    const worksheet = workbook.Sheets[sheetName];
-                                    const jsonData = XLSX.utils.sheet_to_json(worksheet);
-                                    
-                                    console.log(`Procesando hoja: ${sheetName}`, jsonData);
-                                    // Aquí implementarías la lógica de importación específica
-                                });
-                                
-                                showNotification('Importación', 'Archivo Excel procesado. Revise la consola para ver los datos.', 'info');
-                            } catch (error) {
-                                console.error('Error al importar Excel:', error);
-                                showNotification('Error', 'No se pudo procesar el archivo Excel', 'error');
-                            }
-                        };
-                        
-                        reader.readAsArrayBuffer(file);
-                    };
-                    
-                    input.click();
-                }
-
-                // Buscar en todo el sistema
-                function searchSystem(query) {
-                    if (!query.trim()) return;
-                    
-                    const results = {
-                        advisors: [],
-                        tasks: [],
-                        calendar: []
-                    };
-                    
-                    // Buscar en asesores
-                    results.advisors = initialData.advisors.filter(advisor => 
-                        advisor.name.toLowerCase().includes(query.toLowerCase()) ||
-                        advisor.email.toLowerCase().includes(query.toLowerCase())
-                    );
-                    
-                    // Buscar en tareas
-                    results.tasks = initialData.tasks.filter(task => 
-                        task.code.toLowerCase().includes(query.toLowerCase()) ||
-                        task.description.toLowerCase().includes(query.toLowerCase())
-                    );
-                    
-                    // Buscar en calendario
-                    if (initialData.calendar[currentYear] && initialData.calendar[currentYear][currentMonth]) {
-                        const monthData = initialData.calendar[currentYear][currentMonth];
-                        Object.keys(monthData).forEach(advisorId => {
-                            const advisorDays = monthData[advisorId];
-                            Object.keys(advisorDays).forEach(day => {
-                                if (advisorDays[day].toLowerCase().includes(query.toLowerCase())) {
-                                    const advisor = initialData.advisors.find(a => a.id === parseInt(advisorId));
-                                    if (advisor) {
-                                        results.calendar.push({
-                                            advisor: advisor.name,
-                                            day: parseInt(day),
-                                            value: advisorDays[day]
-                                        });
-                                    }
-                                }
-                            });
-                        });
-                    }
-                    
-                    // Mostrar resultados
-                    let message = `Resultados para "${query}":\n\n`;
-                    if (results.advisors.length > 0) {
-                        message += `Asesores (${results.advisors.length}):\n`;
-                        results.advisors.forEach(a => message += `• ${a.name}\n`);
-                        message += '\n';
-                    }
-                    
-                    if (results.tasks.length > 0) {
-                        message += `Tareas (${results.tasks.length}):\n`;
-                        results.tasks.forEach(t => message += `• ${t.code}: ${t.description}\n`);
-                        message += '\n';
-                    }
-                    
-                    if (results.calendar.length > 0) {
-                        message += `En calendario (${results.calendar.length}):\n`;
-                        results.calendar.forEach(c => 
-                            message += `• ${c.advisor} - Día ${c.day}: ${c.value}\n`
-                        );
-                    }
-                    
-                    if (results.advisors.length === 0 && results.tasks.length === 0 && results.calendar.length === 0) {
-                        message = `No se encontraron resultados para "${query}"`;
-                    }
-                    
-                    alert(message);
-                }
-
-                // Configurar atajos de teclado
-                document.addEventListener('keydown', function(e) {
-                    // Ctrl + S: Guardar
-                    if (e.ctrlKey && e.key === 's') {
-                        e.preventDefault();
-                        saveData();
-                        showNotification('Guardado', 'Datos guardados correctamente', 'success');
-                    }
-                    
-                    // Ctrl + E: Exportar
-                    if (e.ctrlKey && e.key === 'e') {
-                        e.preventDefault();
-                        exportCalendarToExcel();
-                    }
-                    
-                    // Ctrl + N: Nuevo asesor
-                    if (e.ctrlKey && e.key === 'n') {
-                        e.preventDefault();
-                        showAdvisorModal('new');
-                    }
-                    
-                    // Ctrl + T: Nueva tarea
-                    if (e.ctrlKey && e.key === 't') {
-                        e.preventDefault();
-                        showTaskModal('new');
-                    }
-                    
-                    // F1: Ayuda
-                    if (e.key === 'F1') {
-                        e.preventDefault();
-                        showHelp();
-                    }
+                    console.log(`Procesando hoja: ${sheetName}`, jsonData);
+                    // Aquí implementarías la lógica de importación específica
                 });
+                
+                showNotification('Importación', 'Archivo Excel procesado. Revise la consola para ver los datos.', 'info');
+            } catch (error) {
+                console.error('Error al importar Excel:', error);
+                showNotification('Error', 'No se pudo procesar el archivo Excel', 'error');
+            }
+        };
+        
+        reader.readAsArrayBuffer(file);
+    };
+    
+    input.click();
+}
 
-                function showHelp() {
-                    const helpText = `
+// Buscar en todo el sistema
+function searchSystem(query) {
+    if (!query.trim()) return;
+    
+    const results = {
+        advisors: [],
+        tasks: [],
+        calendar: []
+    };
+    
+    // Buscar en asesores
+    results.advisors = initialData.advisors.filter(advisor => 
+        advisor.name.toLowerCase().includes(query.toLowerCase()) ||
+        advisor.email.toLowerCase().includes(query.toLowerCase())
+    );
+    
+    // Buscar en tareas
+    results.tasks = initialData.tasks.filter(task => 
+        task.code.toLowerCase().includes(query.toLowerCase()) ||
+        task.description.toLowerCase().includes(query.toLowerCase())
+    );
+    
+    // Buscar en calendario
+    if (initialData.calendar[currentYear] && initialData.calendar[currentYear][currentMonth]) {
+        const monthData = initialData.calendar[currentYear][currentMonth];
+        Object.keys(monthData).forEach(advisorId => {
+            const advisorDays = monthData[advisorId];
+            Object.keys(advisorDays).forEach(day => {
+                if (advisorDays[day].toLowerCase().includes(query.toLowerCase())) {
+                    const advisor = initialData.advisors.find(a => a.id === parseInt(advisorId));
+                    if (advisor) {
+                        results.calendar.push({
+                            advisor: advisor.name,
+                            day: parseInt(day),
+                            value: advisorDays[day]
+                        });
+                    }
+                }
+            });
+        });
+    }
+    
+    // Mostrar resultados
+    let message = `Resultados para "${query}":\n\n`;
+    if (results.advisors.length > 0) {
+        message += `Asesores (${results.advisors.length}):\n`;
+        results.advisors.forEach(a => message += `• ${a.name}\n`);
+        message += '\n';
+    }
+    
+    if (results.tasks.length > 0) {
+        message += `Tareas (${results.tasks.length}):\n`;
+        results.tasks.forEach(t => message += `• ${t.code}: ${t.description}\n`);
+        message += '\n';
+    }
+    
+    if (results.calendar.length > 0) {
+        message += `En calendario (${results.calendar.length}):\n`;
+        results.calendar.forEach(c => 
+            message += `• ${c.advisor} - Día ${c.day}: ${c.value}\n`
+        );
+    }
+    
+    if (results.advisors.length === 0 && results.tasks.length === 0 && results.calendar.length === 0) {
+        message = `No se encontraron resultados para "${query}"`;
+    }
+    
+    alert(message);
+}
+
+// Configurar atajos de teclado
+document.addEventListener('keydown', function(e) {
+    // Ctrl + S: Guardar
+    if (e.ctrlKey && e.key === 's') {
+        e.preventDefault();
+        saveData();
+        showNotification('Guardado', 'Datos guardados correctamente', 'success');
+    }
+    
+    // Ctrl + E: Exportar
+    if (e.ctrlKey && e.key === 'e') {
+        e.preventDefault();
+        exportCalendarToExcel();
+    }
+    
+    // Ctrl + N: Nuevo asesor
+    if (e.ctrlKey && e.key === 'n') {
+        e.preventDefault();
+        showAdvisorModal('new');
+    }
+    
+    // Ctrl + T: Nueva tarea
+    if (e.ctrlKey && e.key === 't') {
+        e.preventDefault();
+        showTaskModal('new');
+    }
+    
+    // F1: Ayuda
+    if (e.key === 'F1') {
+        e.preventDefault();
+        showHelp();
+    }
+});
+
+function showHelp() {
+    const helpText = `
 SISTEMA DE GESTIÓN CURRICULAR ICE - AYUDAS
 
 ATAJOS DE TECLADO:
@@ -2769,12 +2861,12 @@ PWA (APP MÓVIL):
 • Funciona en Android, iOS y escritorio
 `;
 
-                    alert(helpText);
-                }
+    alert(helpText);
+}
 
-                // ============================================
-                // FIN DEL SISTEMA
-                // ============================================
+// ============================================
+// FIN DEL SISTEMA
+// ============================================
             </script>
 </body>
 </html>
